@@ -54,11 +54,15 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
-                   .requestMatchers("/api/owner/**").hasRole("OWNER")
+                                .requestMatchers("/api/owner/planthead/factories").hasRole("PLANTHEAD")
+
+                        .requestMatchers("api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
+                        .requestMatchers("/api/owner/**").hasRole("OWNER")
                         //.requestMatchers("/api/owner/**").hasAnyAuthority("OWNER", "ROLE_OWNER")
 
 
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
+//                                .anyRequest().permitAll()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

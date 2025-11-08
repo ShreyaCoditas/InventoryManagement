@@ -7,13 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChiefSupervisorResponseDto {
-    private Long supervisorId;
-    private String name;
+public class PlantHeadDto {
+    private Long plantheadId;
+    private String username;
     private String email;
-//    private String phoneNumber;
-    private String factoryId;
-
     private String isActive;
-
 }

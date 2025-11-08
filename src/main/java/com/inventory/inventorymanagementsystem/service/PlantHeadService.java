@@ -2,10 +2,7 @@ package com.inventory.inventorymanagementsystem.service;
 
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.RoleName;
-import com.inventory.inventorymanagementsystem.dto.ApiResponseDto;
-import com.inventory.inventorymanagementsystem.dto.CreatePlantHeadRequestDto;
-import com.inventory.inventorymanagementsystem.dto.FactoryListDto;
-import com.inventory.inventorymanagementsystem.dto.PlantHeadResponseDto;
+import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Factory;
 import com.inventory.inventorymanagementsystem.entity.Role;
 import com.inventory.inventorymanagementsystem.entity.User;
@@ -192,4 +189,18 @@ public class PlantHeadService {
 
         return new ApiResponseDto<>(true, "Plant Head deleted (soft) successfully", null);
     }
+
+    public ApiResponseDto<List<PlantHeadDto>> getAllPlantHeads() {
+        Role role = roleRepository.findByRoleName(RoleName.PLANTHEAD)
+                .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
+
+        List<User> plantHeads = userRepository.findByRole(role);
+
+        List<PlantHeadDto> result = plantHeads.stream()
+                .map(u -> new PlantHeadDto(u.getId(), u.getUsername(), u.getEmail(), u.getIsActive().name()))
+                .toList();
+
+        return new ApiResponseDto<>(true, "Plant Heads fetched successfully", result);
+    }
+
 }

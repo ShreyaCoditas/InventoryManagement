@@ -10,6 +10,11 @@ public interface UserFactoryMappingRepository extends JpaRepository<UserFactoryM
     //  Get all supervisors (or other users) by role
     List<UserFactoryMapping> findByAssignedRole(RoleName assignedRole);
 
+
+
     //  Optional: find by factory ID and role
     List<UserFactoryMapping> findByFactoryIdAndAssignedRole(Long factoryId, RoleName assignedRole);
+
+    boolean existsByFactory_IdAndAssignedRole(Long factoryId, RoleName assignedRole);
+
 }

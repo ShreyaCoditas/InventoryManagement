@@ -34,6 +34,6 @@ public class UserFactoryMapping {
     private Factory factory;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "assigned_role", columnDefinition = "role_enum")
+    @Column(name = "assigned_role")
     private RoleName assignedRole;
 }

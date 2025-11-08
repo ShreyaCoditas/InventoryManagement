@@ -1,20 +1,32 @@
 package com.inventory.inventorymanagementsystem.service;
 
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
-import com.inventory.inventorymanagementsystem.dto.ApiResponseDto;
-import com.inventory.inventorymanagementsystem.dto.CreateFactoryRequestDto;
-import com.inventory.inventorymanagementsystem.dto.FactoryResponseDto;
-import com.inventory.inventorymanagementsystem.dto.UpdateFactoryRequestDto;
+import com.inventory.inventorymanagementsystem.constants.RoleName;
+import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Factory;
 import com.inventory.inventorymanagementsystem.entity.User;
+import com.inventory.inventorymanagementsystem.entity.UserFactoryMapping;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.FactoryFilterSortDto;
+import com.inventory.inventorymanagementsystem.repository.FactoryProductionRepository;
 import com.inventory.inventorymanagementsystem.repository.FactoryRepository;
+import com.inventory.inventorymanagementsystem.repository.UserFactoryMappingRepository;
 import com.inventory.inventorymanagementsystem.repository.UserRepository;
+import com.inventory.inventorymanagementsystem.specifications.FactorySpecifications;
+import com.inventory.inventorymanagementsystem.util.PaginationUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,7 +37,12 @@ public class FactoryService {
     private  FactoryRepository factoryRepository;
 
     @Autowired
+    private FactoryProductionRepository factoryProductionRepository;
+
+    @Autowired
     private  UserRepository userRepository;
+
+    private UserFactoryMappingRepository userFactoryMappingRepository;
 
     @Transactional
     public FactoryResponseDto createFactory(CreateFactoryRequestDto request, User owner) {
@@ -97,33 +114,58 @@ public class FactoryService {
     }
 
 
-//    public List<factorySummaryDto> getAllFactories() {
-//        return factoryRepository.findAll() != null ? factoryRepository.findAll()
-//                .stream()
-//                .map(newFactory -> new factorySummaryDto(
-//                        newFactory.getFactoryId(),
-//                        newFactory.getName(),
-//                        newFactory.getCity(),
-//                        newFactory.getAddress(),
-//                        newFactory.getIsActive(),
-//                        newFactory.getPlantHead().getUsername()
-//                ))
-//                .collect(Collectors.toList()) : Collections.emptyList();
-//    }
-//
-//    @Transactional
-//    public ResponseEntity<factoryDeletionMsgDTO> deleteFactory(Long id) {
-//        factory factory1 = factoryRepository.findById(id).orElseThrow(()-> new RuntimeException("Factory doesn't exists"));
-//
-//        // Handle related entities first to avoid constraint violations
-//        // Delete user_factory relationships
-////        if(userRepository.findB)
-////        List<userFactory> userFactories = userFactoryRepository.findByFactory(factory1);
-////        if (!userFactories.isEmpty()) {
-////            userFactoryRepository.deleteAll(userFactories);
-////        }
-//        // Now delete the factory
-//        factoryRepository.delete(factory1);
-//        return ResponseEntity.ok(new factoryDeletionMsgDTO("Factory deleted successfully"));
-//    }
+    public ApiResponseDto<List<PlantHeadFactoryResponseDto>> getFactoriesByPlantHeadId(Long plantHeadId) {
+
+        List<Factory> factories = factoryRepository.findByPlantHeadId(plantHeadId);
+
+        List<PlantHeadFactoryResponseDto> result = factories.stream()
+                .map(f -> new PlantHeadFactoryResponseDto(
+                        f.getId(),
+                        f.getName(),
+                        f.getCity()  // assuming “city” field represents location
+                ))
+                .toList();
+
+        return new ApiResponseDto<>(true, "Factories fetched successfully", result);
+    }
+
+
+        public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
+
+            // Create Pageable for pagination and sorting
+            Sort sort = Sort.by(filter.getSortBy());
+            if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
+                sort = sort.descending();
+            }
+            Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+
+            // Fetch paginated data
+            Page<Factory> factoryPage = factoryRepository.findAll(pageable);
+
+            // Convert entities to DTOs
+            List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
+                String plantHeadName = factory.getPlantHead() != null
+                        ? factory.getPlantHead().getUsername()
+                        : "Unassigned";
+
+                // Get total products from factory_production table
+                int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
+                return new FactoryDto(
+                        factory.getId(),
+                        factory.getName(),
+                        factory.getCity(),
+                        plantHeadName,
+                        totalProducts
+                );
+            }).toList();
+
+            // Build pagination info
+            Map<String, Object> pagination = PaginationUtil.build(factoryPage);
+
+            return new ApiResponseDto<>(true, "Factories fetched successfully", factories, pagination);
+        }
+
+
+
+
 }

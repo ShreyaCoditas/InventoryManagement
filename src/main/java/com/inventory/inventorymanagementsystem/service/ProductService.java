@@ -169,8 +169,8 @@ public class ProductService {
                     p.getCategory().getCategoryName(),
                     p.getImage(),
                     p.getIsActive().name(),
-                    totalQuantity,      // ✅ new field
-                    stockStatus         // ✅ new field
+                    totalQuantity,      // new field
+                    stockStatus         // new field
             );
         }).toList();
 
