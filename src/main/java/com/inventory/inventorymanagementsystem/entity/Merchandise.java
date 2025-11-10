@@ -2,6 +2,7 @@ package com.inventory.inventorymanagementsystem.entity;
 
 
 
+import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,7 @@ public class Merchandise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "name", length = 100)
     private String name;
@@ -29,6 +30,13 @@ public class Merchandise {
 
     @Column(name = "reward_points")
     private Integer rewardPoints;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "is_active", nullable = false)
+    private ActiveStatus isActive = ActiveStatus.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

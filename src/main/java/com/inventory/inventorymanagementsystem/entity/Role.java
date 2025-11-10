@@ -22,10 +22,10 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role_name", unique = true, nullable = false, length = 50)
+    @Column(name = "role_name", columnDefinition = "role_enum", unique = true, nullable = false)
     private RoleName roleName;
 
 

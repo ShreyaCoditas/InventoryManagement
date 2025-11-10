@@ -24,6 +24,7 @@ public class CreateOrUpdateProductDto {
     @Positive(message = "Price must be greater than 0")
     private BigDecimal price;
 
+
     private String image;
 }
 

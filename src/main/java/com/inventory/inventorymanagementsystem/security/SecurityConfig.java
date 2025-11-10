@@ -54,9 +54,22 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
+
                                 .requestMatchers("/api/owner/planthead/factories").hasRole("PLANTHEAD")
 
+
+
                         .requestMatchers("api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
+                                .requestMatchers("api/worker/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/worker//{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/worker/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/profile/upload-image").hasRole("OWNER")
+                                .requestMatchers("/api/merchandise/**").hasRole("OWNER")
+                                .requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
+
+                                .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
+
+                                .requestMatchers("/api/products/**").hasRole("OWNER")
                         .requestMatchers("/api/owner/**").hasRole("OWNER")
                         //.requestMatchers("/api/owner/**").hasAnyAuthority("OWNER", "ROLE_OWNER")
 

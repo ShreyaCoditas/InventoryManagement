@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -36,6 +37,9 @@ public class OwnerController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
 
 
@@ -77,10 +81,10 @@ public class OwnerController {
         return plantHeadService.softDeletePlantHead(id);
     }
 
-    @GetMapping("/unassigned")
-    public ResponseEntity<ApiResponseDto<List<FactoryListDto>>> getUnassignedFactories() {
-        return ResponseEntity.ok(plantHeadService.getUnassignedFactories());
-    }
+//    @GetMapping("/unassigned")
+//    public ResponseEntity<ApiResponseDto<List<FactoryListDto>>> getUnassignedFactories() {
+//        return ResponseEntity.ok(plantHeadService.getUnassignedFactories());
+//    }
 
 
 
@@ -118,25 +122,25 @@ public class OwnerController {
     }
 
 
-    @PostMapping("/create-product")
-    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
-            @Valid @RequestBody CreateOrUpdateProductDto request) {
-        return ResponseEntity.ok(productService.createOrUpdateProduct(request));
-    }
-
-    @GetMapping("/products")
-//    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD','CENTRAL_OFFICER')")
-    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
-            @ModelAttribute ProductFilterSortDto filter) {
-        return ResponseEntity.ok(productService.getAllProducts(filter));
-    }
-
-    // DELETE (soft)
-    @DeleteMapping("/{id}")
-//    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD')")
-    public ResponseEntity<ApiResponseDto<Void>> deleteProduct(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.deleteProduct(id));
-    }
+//    @PostMapping("/create-product")
+//    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
+//            @Valid @RequestBody CreateOrUpdateProductDto request) {
+//        return ResponseEntity.ok(productService.createOrUpdateProduct(request));
+//    }
+//
+//    @GetMapping("/products")
+////    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD','CENTRAL_OFFICER')")
+//    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
+//            @ModelAttribute ProductFilterSortDto filter) {
+//        return ResponseEntity.ok(productService.getAllProducts(filter));
+//    }
+//
+//    // DELETE (soft)
+//    @DeleteMapping("/{id}")
+////    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD')")
+//    public ResponseEntity<ApiResponseDto<Void>> deleteProduct(@PathVariable Long id) {
+//        return ResponseEntity.ok(productService.deleteProduct(id));
+//    }
 
 //    @PreAuthorize("hasRole('PLANTHEAD')")
     @PostMapping("/create/chiefsupervisor")
@@ -204,6 +208,29 @@ public class OwnerController {
 
         return ResponseEntity.ok(response);
     }
+
+//    @PutMapping("/categories/{id}/update")
+//    public ResponseEntity<ApiResponseDto<CategoryResponseDto>> updateCategory(
+//            @PathVariable Long id,
+//            @RequestBody CreateOrUpdateCategoryDto request) {
+//
+//        ApiResponseDto<CategoryResponseDto> response = productService.updateCategory(id, request);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    @DeleteMapping("/categories/{id}/delete")
+//    public ResponseEntity<ApiResponseDto<Void>> deleteCategory(@PathVariable Long id) {
+//        ApiResponseDto<Void> response = productService.deleteCategory(id);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    @PostMapping("/upload-image")
+//    public ResponseEntity<ApiResponseDto<String>> uploadImage(@RequestParam("file") MultipartFile file) {
+//        String imageUrl = cloudinaryService.uploadFile(file);
+//        return ResponseEntity.ok(new ApiResponseDto<>(true, "Image uploaded successfully", imageUrl));
+//    }
+
+
 
 
 

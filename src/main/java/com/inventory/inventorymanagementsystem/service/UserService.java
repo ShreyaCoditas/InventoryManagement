@@ -43,7 +43,6 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
-
     @Autowired
     private JWTUtil jwtUtil;
 
@@ -63,7 +62,7 @@ public class UserService {
         User user=objectMapper.convertValue(userDto,User.class);
         user.setEmail(normalizedEmail);
         user.setPassword(encoder.encode(userDto.getPassword()));
-        Role defaultRole = roleRepository.findByRoleName(RoleName.DISTRIBUTOR)
+        Role defaultRole = roleRepository.findByRoleName(RoleName.DISTRIBUTOR.name())
                 .orElseThrow(()->new RuntimeException("Role not found"));
         user.setRole(defaultRole);
         return userRepository.save(user);
@@ -102,29 +101,29 @@ public class UserService {
         Role role;
         Page<User> userPage;
 
-        // ✅ Pagination & Sorting setup
+        // Pagination & Sorting setup
         Sort sort = Sort.by(filter.getSortBy());
         if ("desc".equalsIgnoreCase(filter.getSortDirection())) sort = sort.descending();
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
 
-        // ✅ Role-based logic
+        // Role-based logic
         switch (roleType.toUpperCase()) {
             case "PLANTHEAD" -> {
-                role = roleRepository.findByRoleName(RoleName.PLANTHEAD)
+                role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                         .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
                 userPage = userRepository.findAll(spec, pageable);
             }
 
             case "CENTRALOFFICER" -> {
-                role = roleRepository.findByRoleName(RoleName.CENTRALOFFICER)
+                role = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
                         .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
                 userPage = userRepository.findAll(spec, pageable);
             }
 
             case "CHIEFSUPERVISOR" -> {
-                role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR)
+                role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
                         .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
                 userPage = userRepository.findAll(spec, pageable);
@@ -133,7 +132,7 @@ public class UserService {
             default -> throw new IllegalArgumentException("Invalid role type: " + roleType);
         }
 
-        // ✅ Convert to DTOs
+        //  Convert to DTOs
         List<UserListDto> users = userPage.getContent().stream()
                 .map(u -> new UserListDto(
                         u.getId(),
@@ -145,10 +144,10 @@ public class UserService {
                 ))
                 .toList();
 
-        // ✅ Attach pagination map from utility
+        //  Attach pagination map from utility
         Map<String, Object> pagination = PaginationUtil.build(userPage);
 
-// ✅ Return response
+//  Return response
         return new ApiResponseDto<>(true, "Users fetched successfully", users, pagination);
 
     }

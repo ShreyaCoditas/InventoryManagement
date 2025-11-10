@@ -1,0 +1,72 @@
+package com.inventory.inventorymanagementsystem.exceptions;
+
+
+
+
+import com.inventory.inventorymanagementsystem.dto.ApiResponseDto;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+
+    // Handles validation errors from @Valid annotated DTOs.
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponseDto<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        ApiResponseDto<Map<String, String>> response =
+                new ApiResponseDto(false, "Validation failed", errors);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+
+        // Handles known runtime exceptions from service/business logic (like "User not found").
+        @ExceptionHandler(RuntimeException.class)
+        public ResponseEntity<ApiResponseDto<Map<String,Object>>> handleRuntimeExceptions(RuntimeException ex) {
+            Map<String,Object> errors=new HashMap<>();
+            errors.put("error",ex.getMessage());
+            errors.put("timestamp",LocalDateTime.now());
+            errors.put("status",HttpStatus.BAD_REQUEST.value());
+            ApiResponseDto<Map<String,Object>> response = new ApiResponseDto<>(false, ex.getMessage(),errors);
+
+            // For user-related/business logic errors, return 400 (not 500)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+
+        //  Handles all unexpected exceptions that aren't caught elsewhere.
+
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ApiResponseDto<String>> handleAllExceptions(Exception ex) {
+            ApiResponseDto<String> response =
+                    new ApiResponseDto<>(false, "Something went wrong: " + ex.getMessage());
+
+            // Internal server error for unknown exceptions
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+
+
+
+
+
+
+}
+

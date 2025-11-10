@@ -1,31 +1,51 @@
 package com.inventory.inventorymanagementsystem.specifications;
 
+import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.entity.Factory;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-public class FactorySpecifications {
+import java.util.List;
 
-    public static Specification<Factory> withFilters(String location, String plantHeadName) {
+public class FactorySpecifications {
+    public static Specification<Factory> withFilters(String location, String plantHeadName, String status) {
         return (root, query, cb) -> {
-            var predicates = cb.conjunction();
+            List<Predicate> predicates = new java.util.ArrayList<>();
 
             // ✅ Filter by city/location
             if (location != null && !location.isBlank()) {
-                predicates.getExpressions().add(
-                        cb.like(cb.lower(root.get("city")), "%" + location.toLowerCase() + "%")
+                predicates.add(
+                        cb.like(cb.lower(root.get("city")), "%" + location.trim().toLowerCase() + "%")
                 );
             }
 
-            // ✅ Strict Filter by Plant Head name — only factories that have a PlantHead assigned
+            // ✅ Filter by Plant Head name (exact match)
             if (plantHeadName != null && !plantHeadName.isBlank()) {
-                // Use INNER JOIN instead of LEFT JOIN
-                var join = root.join("plantHead");
-                predicates.getExpressions().add(
-                        cb.equal(cb.lower(join.get("username")), plantHeadName.toLowerCase())
+                var join = root.join("plantHead", JoinType.INNER);
+                predicates.add(
+                        cb.equal(cb.lower(join.get("username")), plantHeadName.trim().toLowerCase())
                 );
             }
 
-            return predicates;
+            // ✅ Filter by Active/Inactive status
+            if (status != null && !status.isBlank()) {
+                try {
+                    ActiveStatus activeStatus = ActiveStatus.valueOf(status.trim().toUpperCase());
+                    predicates.add(cb.equal(root.get("isActive"), activeStatus));
+                } catch (IllegalArgumentException ignored) {
+                    // ignore invalid status
+                }
+            }
+
+            // ✅ Combine all filters with AND
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
     }
+
+
+
+
+
+
 }

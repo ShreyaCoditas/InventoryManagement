@@ -24,7 +24,7 @@ public class Tool {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "name", length = 100)
     private String name;
@@ -36,12 +36,15 @@ public class Tool {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "tool_description", columnDefinition = "TEXT")
+    private String toolDescription;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "is_perishable", columnDefinition = "is_perishable_enum")
+    @Column(name = "is_perishable",nullable = false )
     private IsPerishableEnum isPerishable;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "is_expensive", columnDefinition = "expensive_enum")
+    @Column(name = "is_expensive",nullable = false )
     private ExpensiveEnum isExpensive;
 
     @Column(name = "threshold")
@@ -51,7 +54,7 @@ public class Tool {
     private Integer availableQuantity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "is_active", columnDefinition = "active_status")
+    @Column(name = "is_active",length = 20, nullable = false)
     private ActiveStatus isActive;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -89,7 +92,7 @@ public class Tool {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (isActive == null) {
-            isActive = ActiveStatus.YES;
+            isActive = ActiveStatus.ACTIVE;
         }
     }
 

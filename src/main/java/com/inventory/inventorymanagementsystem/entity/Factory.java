@@ -91,7 +91,7 @@ public class Factory {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (isActive == null) {
-            isActive = ActiveStatus.YES;
+            isActive = ActiveStatus.ACTIVE;
         }
     }
 

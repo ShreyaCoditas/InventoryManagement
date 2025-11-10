@@ -34,7 +34,7 @@ public class Email {
     private String body;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "email_status")
+    @Column(name = "status")
     private EmailStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -13,4 +13,7 @@ public class FactoryDto {
     private String location;
     private String plantHeadName;
     private int totalProducts;
+    private int totalWorkers;  // ✅ New
+    private int totalTools;    // ✅ New
+    private String status;
 }

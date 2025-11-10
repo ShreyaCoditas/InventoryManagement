@@ -1,0 +1,22 @@
+package com.inventory.inventorymanagementsystem.dto;
+
+import lombok.Builder;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ToolResponseDto {
+    private Long id;
+    private String name;
+    private String description;
+    private String categoryName;
+    private String imageUrl;
+    private String isPerishable;
+    private String isExpensive;
+    private Integer threshold;
+    private Integer availableQuantity;
+    private String status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}

@@ -21,21 +21,21 @@ public class ProductResponseDto {
     private String categoryName;
     private String image;
     private String isActive;
-    private Integer totalQuantity;
-    private String stockStatus;
+//    private Integer totalQuantity;
+//    private String stockStatus;
 
     // ✅ Optional constructor for createOrUpdateProduct (8 params only)
-    public ProductResponseDto(Long id, String name, String productDescription, BigDecimal price,
-                              Integer rewardPoint, String categoryName, String image, String isActive) {
-        this.id = id;
-        this.name = name;
-        this.productDescription = productDescription;
-        this.price = price;
-        this.rewardPoint = rewardPoint;
-        this.categoryName = categoryName;
-        this.image = image;
-        this.isActive = isActive;
-        this.totalQuantity = 0;       // default
-        this.stockStatus = "Unknown"; // default
+//    public ProductResponseDto(Long id, String name, String productDescription, BigDecimal price,
+//                              Integer rewardPoint, String categoryName, String image, String isActive) {
+//        this.id = id;
+//        this.name = name;
+//        this.productDescription = productDescription;
+//        this.price = price;
+//        this.rewardPoint = rewardPoint;
+//        this.categoryName = categoryName;
+//        this.image = image;
+//        this.isActive = isActive;
+//        this.totalQuantity = 0;       // default
+//        this.stockStatus = "Unknown"; // default
     }
-}
+

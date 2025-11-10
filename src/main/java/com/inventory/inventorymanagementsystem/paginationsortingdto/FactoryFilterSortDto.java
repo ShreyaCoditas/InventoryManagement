@@ -7,5 +7,7 @@ import lombok.Setter;
 @Setter
 public class FactoryFilterSortDto extends BaseFilterSortDto {
     private String location;        // filter factories by location
-    private String plantHeadName;   // filter by plant head assigned
+    private String plantHeadName;
+    private String status; // ACTIVE / INACTIVE
+// filter by plant head assigned
 }

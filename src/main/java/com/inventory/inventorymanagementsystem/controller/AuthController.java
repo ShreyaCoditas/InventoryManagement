@@ -23,11 +23,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponseDto<Void>> register(@Valid @RequestBody RegisterDto userDto) {
         User user = userService.register(userDto);
-        // Use constructor without data
         ApiResponseDto<Void> apiResponseDTO = new ApiResponseDto<>(true, "User registered successfully");
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
     }
-
 
     // Login API
     @PostMapping("/login")
