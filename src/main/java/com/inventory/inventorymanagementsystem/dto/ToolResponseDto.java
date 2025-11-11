@@ -17,6 +17,7 @@ public class ToolResponseDto {
     private Integer threshold;
     private Integer availableQuantity;
     private String status;
+    private String stockStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

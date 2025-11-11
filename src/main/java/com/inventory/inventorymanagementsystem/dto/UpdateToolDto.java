@@ -2,8 +2,10 @@ package com.inventory.inventorymanagementsystem.dto;
 
 import com.inventory.inventorymanagementsystem.constants.ExpensiveEnum;
 import com.inventory.inventorymanagementsystem.constants.IsPerishableEnum;
+import com.inventory.inventorymanagementsystem.validation.ValidImage;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class UpdateToolDto {
@@ -17,8 +19,8 @@ public class UpdateToolDto {
 
     private String newCategoryName;
 
-    @Pattern(regexp = "^(http|https)://.*$", message = "Image URL must be valid")
-    private String imageUrl;
+    @ValidImage
+    private MultipartFile imageFile; // Optional
 
     private IsPerishableEnum isPerishable;
 

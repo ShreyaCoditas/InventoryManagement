@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -28,86 +29,54 @@ public class CentralOfficeService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-
-
     @Transactional
-    public ApiResponseDto<Void> addCentralOfficerToExistingOffice(AddCentralOfficerDto dto) {
-
+    public ApiResponseDto<Void> addCentralOfficer(AddCentralOfficerDto dto) {
         CentralOffice office = centralOfficeRepository.findAll().stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Central Office not found — please seed one before adding officers."));
+                .orElseThrow(() -> new RuntimeException("Central Office not found. Please seed one."));
+        userRepository.findByEmailIgnoreCase(dto.getEmail())
+                .ifPresent(u -> {
+                    throw new RuntimeException(
+                            u.getRole().getRoleName().equals(RoleName.CENTRALOFFICER.name())
+                                    ? "User is already a Central Officer"
+                                    : "User exists but has another role"
+                    );
+                });
 
-        User existingUser = userRepository.findByEmailIgnoreCase(dto.getEmail()).orElse(null);
-        if (existingUser != null) {
-            if (existingUser.getRole().getRoleName().equals(RoleName.CENTRALOFFICER.name())) {
-                return new ApiResponseDto<>(false, "User is already a Central Officer", null);
-            }
-            return new ApiResponseDto<>(false, "User exists but has another role", null);
-        }
         Role centralRole = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
-                .orElseThrow(() -> new RuntimeException("CENTRAL_OFFICER role not found in system"));
-        User officer = new User();
-        officer.setUsername(dto.getName());
-        officer.setEmail(dto.getEmail());
-//        String generatedPassword = UUID.randomUUID().toString().substring(0, 8);
-        String generatedPassword = "default123";
-        officer.setPassword(passwordEncoder.encode(generatedPassword));
-        officer.setRole(centralRole);
-        officer.setIsActive(ActiveStatus.ACTIVE);
+                .orElseThrow(() -> new RuntimeException("CENTRAL_OFFICER role not found"));
+        User officer = User.builder()
+                .username(dto.getName())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode("default123"))
+                .role(centralRole)
+                .isActive(ActiveStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
+                .build();
         userRepository.save(officer);
-        UserCentralOfficeMapping mapping = new UserCentralOfficeMapping();
-        mapping.setCentralOfficer(officer);
-        mapping.setCentralOffice(office);
-        mappingRepository.save(mapping);
+        mappingRepository.save(
+                UserCentralOfficeMapping.builder()
+                        .centralOfficer(officer)
+                        .centralOffice(office)
+                        .build()
+        );
         return new ApiResponseDto<>(true, "Central Officer added successfully", null);
     }
 
-
     @Transactional
-    public ApiResponseDto<Void> updateCentralOffice(UpdateCentralOfficeDto dto) {
-        CentralOffice office = centralOfficeRepository.findById(dto.getId())
-                .orElseThrow(() -> new RuntimeException("Central Office not found with ID: " + dto.getId()));
-
-        if (dto.getLocation() != null && !dto.getLocation().isBlank()) {
-            office.setLocation(dto.getLocation());
+    public ApiResponseDto<Void> updateCentralOfficer(Long id, AddCentralOfficerDto dto) {
+        User officer = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Central Officer not found with ID: " + id));
+        if (officer.getIsActive() == ActiveStatus.INACTIVE) {
+            return new ApiResponseDto<>(false, "Cannot update an inactive Central Officer", null);
         }
-        if (dto.getCentralOfficeHeadEmail() != null && !dto.getCentralOfficeHeadEmail().isBlank()) {
-
-            User officer = userRepository.findByEmailIgnoreCase(dto.getCentralOfficeHeadEmail()).orElse(null);
-
-            Role centralRole = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
-                    .orElseThrow(() -> new RuntimeException("CENTRAL_OFFICER role not found"));
-
-            if (officer == null) {
-                officer = new User();
-                officer.setEmail(dto.getCentralOfficeHeadEmail());
-                officer.setUsername(dto.getCentralOfficeHeadName() != null ?
-                        dto.getCentralOfficeHeadName() : dto.getCentralOfficeHeadEmail());
-                officer.setPassword(passwordEncoder.encode("default123"));
-                officer.setRole(centralRole);
-                userRepository.save(officer);
-            }
-
-            boolean alreadyMapped = false;
-            List<UserCentralOfficeMapping> mappings = office.getUserCentralOfficeMappings();
-            if (mappings != null) {
-                for (UserCentralOfficeMapping map : mappings) {
-                    if (map.getCentralOfficer().getEmail().equalsIgnoreCase(officer.getEmail())) {
-                        alreadyMapped = true;
-                        break;
-                    }
-                }
-            }
-            if (!alreadyMapped) {
-                UserCentralOfficeMapping mapping = new UserCentralOfficeMapping();
-                mapping.setCentralOfficer(officer);
-                mapping.setCentralOffice(office);
-                mappingRepository.save(mapping);
-            }
-        }
-        centralOfficeRepository.save(office);
-        return new ApiResponseDto<>(true, "Central Office updated successfully", null);
+        officer.setUsername(dto.getName());
+        officer.setEmail(dto.getEmail());
+        officer.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(officer);
+        return new ApiResponseDto<>(true, "Central Officer updated successfully", null);
     }
+
 
     @Transactional
     public ApiResponseDto<Void> softDeleteCentralOfficer(Long officerId) {

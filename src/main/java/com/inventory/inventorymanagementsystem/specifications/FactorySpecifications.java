@@ -13,14 +13,14 @@ public class FactorySpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
 
-            // ✅ Filter by city/location
+            //  Filter by city/location
             if (location != null && !location.isBlank()) {
                 predicates.add(
                         cb.like(cb.lower(root.get("city")), "%" + location.trim().toLowerCase() + "%")
                 );
             }
 
-            // ✅ Filter by Plant Head name (exact match)
+            // Filter by Plant Head name (exact match)
             if (plantHeadName != null && !plantHeadName.isBlank()) {
                 var join = root.join("plantHead", JoinType.INNER);
                 predicates.add(

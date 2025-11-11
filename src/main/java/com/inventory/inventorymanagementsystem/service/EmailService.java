@@ -56,7 +56,7 @@ public class EmailService {
             savedEmail.setStatus(EmailStatus.SENT);
         } catch (Exception e) {
             savedEmail.setStatus(EmailStatus.FAILED);
-            System.err.println("❌ Failed to send email to " + toEmail + ": " + e.getMessage());
+            System.err.println("Failed to send email to " + toEmail + ": " + e.getMessage());
             e.printStackTrace(); // Optional: logs full stack trace
         }
 

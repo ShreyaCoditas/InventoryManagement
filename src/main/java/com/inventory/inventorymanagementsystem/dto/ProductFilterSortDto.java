@@ -12,5 +12,6 @@ public class ProductFilterSortDto extends BaseFilterSortDto {
     private String availability;   // "InStock" or "OutOfStock"
     private String sortBy;         // "price" or "quantity"
     private String sortDirection;  // "asc" or "desc"
+    private String status;
 }
 

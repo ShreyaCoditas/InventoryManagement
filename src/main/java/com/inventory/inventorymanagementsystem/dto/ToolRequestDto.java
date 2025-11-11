@@ -2,9 +2,11 @@ package com.inventory.inventorymanagementsystem.dto;
 
 import com.inventory.inventorymanagementsystem.constants.ExpensiveEnum;
 import com.inventory.inventorymanagementsystem.constants.IsPerishableEnum;
+import com.inventory.inventorymanagementsystem.validation.ValidImage;
 import jakarta.validation.constraints.*;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class ToolRequestDto {
@@ -22,9 +24,9 @@ public class ToolRequestDto {
     @Size(max = 100, message = "New category name cannot exceed 100 characters")
     private String newCategoryName;
 
-    @NotBlank(message = "Image URL is required")
-    @Pattern(regexp = "^(http|https)://.*$", message = "Image URL must be valid")
-    private String imageUrl;
+    @NotNull(message = "Image file is required")
+    @ValidImage
+    private MultipartFile imageFile;
 
     @NotNull(message = "Perishable status is required")
     private IsPerishableEnum isPerishable;

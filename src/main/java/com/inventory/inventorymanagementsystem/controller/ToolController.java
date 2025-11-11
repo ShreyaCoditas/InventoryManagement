@@ -5,9 +5,11 @@ import com.inventory.inventorymanagementsystem.service.ToolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tools")
@@ -16,87 +18,83 @@ public class ToolController {
 
     private final ToolService toolService;
 
-    // =====================================================
-    // ✅ TOOL CRUD ENDPOINTS
-    // =====================================================
+    @PostMapping(value = "/create", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponseDto<ToolResponseDto>> createTool(
+            @Valid @ModelAttribute ToolRequestDto dto,
+            BindingResult result) {
 
-    /**
-     * Create a new tool
-     */
-//    @PostMapping("/create")
-//    public ResponseEntity<ApiResponseDto<ToolResponseDto>> createTool( @Valid @RequestBody ToolRequestDto dto) {
-//        ApiResponseDto<ToolResponseDto> response = toolService.createTool(dto);
-//        return ResponseEntity.ok(response);
-//    }
+        if (result.hasErrors()) {
+            String msg = result.getFieldErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest().body(new ApiResponseDto<>(false, msg, null));
+        }
 
-    /**
-     * Update an existing tool
-     */
-    @PutMapping("/update/{id}")
+        return ResponseEntity.ok(toolService.createTool(dto));
+    }
+
+    @PutMapping(value = "/update/{id}", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponseDto<ToolResponseDto>> updateTool(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateToolDto dto) {
+            @Valid @ModelAttribute UpdateToolDto dto,
+            BindingResult result) {
 
-        ApiResponseDto<ToolResponseDto> response = toolService.updateTool(id, dto);
-        return ResponseEntity.ok(response);
+        if (result.hasErrors()) {
+            String msg = result.getFieldErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest().body(new ApiResponseDto<>(false, msg, null));
+        }
+
+        return ResponseEntity.ok(toolService.updateTool(id, dto));
     }
 
+//    @GetMapping("/getalltools")
+//    public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "id") String sortBy,
+//            @RequestParam(defaultValue = "asc") String sortDir,
+//            @RequestParam(required = false) String availability) {  // ← NEW
+//        return ResponseEntity.ok(
+//                toolService.getAllTools(page, size, sortBy, sortDir, availability)
+//        );
+//    }
 
-    /**
-     * Soft delete a tool
-     */
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ApiResponseDto<String>> softDeleteTool(@PathVariable Long id) {
-        ApiResponseDto<String> response = toolService.softDeleteTool(id);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Get all tools (paginated and sortable)
-     */
-    @GetMapping("/alltools")
+    @GetMapping("/getalltools")
     public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        ApiResponseDto<List<ToolResponseDto>> response =
-                toolService.getAllTools(page, size, sortBy, sortDir);
-        return ResponseEntity.ok(response);
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String availability,
+            @RequestParam(required = false) Long factoryId) {   // NEW
+
+        return ResponseEntity.ok(
+                toolService.getAllTools(page, size, sortBy, sortDir, availability, factoryId)
+        );
     }
 
-    // =====================================================
-    // ✅ TOOL CATEGORY ENDPOINTS (Under /api/tools/categories)
-    // =====================================================
-
-    /**
-     * Get all  tool categories (for dropdown)
-     */
-    @GetMapping("/categories")
-    public ResponseEntity<ApiResponseDto<List<ToolCategoryResponseDto>>> getAllCategories() {
-        ApiResponseDto<List<ToolCategoryResponseDto>> response =
-                toolService.getAllCategories();
-        return ResponseEntity.ok(response);
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponseDto<ToolResponseDto>> getToolById(@PathVariable Long id) {
+        return ResponseEntity.ok(toolService.getToolById(id));
     }
 
-    /**
-     * Update tool category
-     */
-    @PutMapping("/categories/edit/{id}")
-    public ResponseEntity<ApiResponseDto<ToolCategoryResponseDto>> updateCategory(
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<ApiResponseDto<String>> softDeleteTool(@PathVariable Long id) {
+        return ResponseEntity.ok(toolService.softDeleteTool(id));
+    }
+
+    @GetMapping("/category/all")
+    public ResponseEntity<ApiResponseDto<List<ToolCategoryResponseDto>>> getAll() {
+        return ResponseEntity.ok(toolService.getAllCategories());
+    }
+
+    @PutMapping("category/update/{id}")
+    public ResponseEntity<ApiResponseDto<ToolCategoryResponseDto>> update(
             @PathVariable Long id,
-            @RequestBody ToolCategoryRequestDto dto) {
-        ApiResponseDto<ToolCategoryResponseDto> response =
-                toolService.updateCategory(id, dto);
-        return ResponseEntity.ok(response);
+            @Valid @RequestBody ToolCategoryRequestDto dto) {
+        return ResponseEntity.ok(toolService.updateCategory(id, dto));
     }
 
-    /**
-     * Soft delete tool category
-     */
-    @DeleteMapping("/categories/delete/{id}")
-    public ResponseEntity<ApiResponseDto<String>> deleteCategory(@PathVariable Long id) {
-        ApiResponseDto<String> response = toolService.deleteCategory(id);
-        return ResponseEntity.ok(response);
+    @DeleteMapping("/category/delete/{id}")
+    public ResponseEntity<ApiResponseDto<String>> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(toolService.deleteCategory(id));
     }
 }

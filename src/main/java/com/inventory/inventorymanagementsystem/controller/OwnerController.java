@@ -4,6 +4,7 @@ import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.FactoryFilterSortDto;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.UserFilterSortDto;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.WorkerFilterSortDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.service.*;
 import com.inventory.inventorymanagementsystem.service.CentralOfficeService;
@@ -12,8 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
@@ -41,8 +40,6 @@ public class OwnerController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-
-
     @PostMapping("/create-factory")
     public ResponseEntity<ApiResponseDto<FactoryResponseDto>> createFactory(
             @RequestBody CreateFactoryRequestDto request,
@@ -53,15 +50,37 @@ public class OwnerController {
         return ResponseEntity.ok(new ApiResponseDto<>(true, "Factory created successfully", factoryResponse));
     }
 
+    @GetMapping("/factories")
+    public ResponseEntity<ApiResponseDto<List<FactoryDto>>> getAllFactories(
+            @ModelAttribute FactoryFilterSortDto filter) {
+
+        ApiResponseDto<List<FactoryDto>> response = factoryService.getAllFactories(filter);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/factory/update")
+    public ResponseEntity<ApiResponseDto<FactoryResponseDto>> updateFactory(
+            @Valid @RequestBody UpdateFactoryRequestDto request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        FactoryResponseDto response = factoryService.updateFactory(request, currentUser.getUser());
+        return ResponseEntity.ok(
+                new ApiResponseDto<>(true, "Factory updated successfully", null)
+        );
+    }
+
     @DeleteMapping("/factories/{id}/delete")
     public ApiResponseDto<Void> softDeleteFactory(@PathVariable Long id) {
         return factoryService.softDeleteFactory(id);
     }
 
+    @GetMapping("/unassigned")
+    public ResponseEntity<ApiResponseDto<List<FactoryListDto>>> getUnassignedFactories() {
+        return ResponseEntity.ok(plantHeadService.getUnassignedFactories());
+    }
 
     @PostMapping("/create-planthead")
     public ResponseEntity<ApiResponseDto<PlantHeadResponseDto>> createPlantHead(
-            @RequestBody CreatePlantHeadRequestDto request,
+           @Valid @RequestBody CreatePlantHeadRequestDto request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         User owner = userPrincipal.getUser();
@@ -75,42 +94,29 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-
     @DeleteMapping("/plantheads/{id}/delete")
     public ApiResponseDto<Void> softDeletePlantHead(@PathVariable Long id) {
         return plantHeadService.softDeletePlantHead(id);
     }
 
-//    @GetMapping("/unassigned")
-//    public ResponseEntity<ApiResponseDto<List<FactoryListDto>>> getUnassignedFactories() {
-//        return ResponseEntity.ok(plantHeadService.getUnassignedFactories());
-//    }
-
-
-
     @PostMapping("/add-central-officer")
     public ResponseEntity<ApiResponseDto<Void>> addCentralOfficer(
             @Valid @RequestBody AddCentralOfficerDto request
     ) {
-        ApiResponseDto<Void> response = centralOfficeService.addCentralOfficerToExistingOffice(request);
+        ApiResponseDto<Void> response = centralOfficeService.addCentralOfficer(request);
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ApiResponseDto<Void>> updateCentralOfficer(
+            @PathVariable Long id,
+            @Valid @RequestBody AddCentralOfficerDto dto) {
 
-
-
-    @PutMapping("/update/central-office")
-
-    public ResponseEntity<ApiResponseDto<Void>> updateCentralOffice(
-            @RequestBody UpdateCentralOfficeDto request,
-            @AuthenticationPrincipal UserPrincipal userPrincipal
-    ) {
-
-        ApiResponseDto<Void> response = centralOfficeService.updateCentralOffice(request);
+        ApiResponseDto<Void> response = centralOfficeService.updateCentralOfficer(id, dto);
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/soft-delete/central-officer/{id}")
+    @DeleteMapping("/soft-delete/central-officer/{id}")
     public ResponseEntity<ApiResponseDto<Void>> softDeleteCentralOfficer(
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal userPrincipal
@@ -121,44 +127,19 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-
-//    @PostMapping("/create-product")
-//    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
-//            @Valid @RequestBody CreateOrUpdateProductDto request) {
-//        return ResponseEntity.ok(productService.createOrUpdateProduct(request));
-//    }
-//
-//    @GetMapping("/products")
-////    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD','CENTRAL_OFFICER')")
-//    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
-//            @ModelAttribute ProductFilterSortDto filter) {
-//        return ResponseEntity.ok(productService.getAllProducts(filter));
-//    }
-//
-//    // DELETE (soft)
-//    @DeleteMapping("/{id}")
-////    @PreAuthorize("hasAnyRole('OWNER','PLANTHEAD')")
-//    public ResponseEntity<ApiResponseDto<Void>> deleteProduct(@PathVariable Long id) {
-//        return ResponseEntity.ok(productService.deleteProduct(id));
-//    }
-
 //    @PreAuthorize("hasRole('PLANTHEAD')")
     @PostMapping("/create/chiefsupervisor")
     public ResponseEntity<ApiResponseDto<ChiefSupervisorResponseDto>> createChiefSupervisor(
             @Valid @RequestBody CreateChiefSupervisorRequestDto dto,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-
         User currentUser = userPrincipal.getUser();
         ApiResponseDto<ChiefSupervisorResponseDto> response =
                 chiefSupervisorService.createChiefSupervisor(dto, currentUser);
-
         return ResponseEntity.ok(response);
     }
 
-
     @GetMapping("/allsupervisor")
     public ResponseEntity<ApiResponseDto<List<ChiefSupervisorResponseDto>>> getAllSupervisors() {
-
         ApiResponseDto<List<ChiefSupervisorResponseDto>> response = chiefSupervisorService.getAllSupervisors();
         return ResponseEntity.ok(response);
     }
@@ -170,13 +151,6 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/factories")
-    public ResponseEntity<ApiResponseDto<List<FactoryDto>>> getAllFactories(
-            @ModelAttribute FactoryFilterSortDto filter) {
-
-        ApiResponseDto<List<FactoryDto>> response = factoryService.getAllFactories(filter);
-        return ResponseEntity.ok(response);
-    }
 
     @PostMapping("/planthead/factories")
     public ResponseEntity<ApiResponseDto<List<PlantHeadFactoryResponseDto>>> getFactoriesByPlantHead(
@@ -209,26 +183,30 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-//    @PutMapping("/categories/{id}/update")
-//    public ResponseEntity<ApiResponseDto<CategoryResponseDto>> updateCategory(
-//            @PathVariable Long id,
-//            @RequestBody CreateOrUpdateCategoryDto request) {
-//
-//        ApiResponseDto<CategoryResponseDto> response = productService.updateCategory(id, request);
-//        return ResponseEntity.ok(response);
-//    }
-//
-//    @DeleteMapping("/categories/{id}/delete")
-//    public ResponseEntity<ApiResponseDto<Void>> deleteCategory(@PathVariable Long id) {
-//        ApiResponseDto<Void> response = productService.deleteCategory(id);
-//        return ResponseEntity.ok(response);
-//    }
-//
-//    @PostMapping("/upload-image")
-//    public ResponseEntity<ApiResponseDto<String>> uploadImage(@RequestParam("file") MultipartFile file) {
-//        String imageUrl = cloudinaryService.uploadFile(file);
-//        return ResponseEntity.ok(new ApiResponseDto<>(true, "Image uploaded successfully", imageUrl));
-//    }
+    @PostMapping("/create/workers")
+    public ResponseEntity<ApiResponseDto<WorkerResponseDto>> createWorker(
+            @RequestBody CreateWorkerRequestDto request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        ApiResponseDto<WorkerResponseDto> response = plantHeadService.createWorker(request, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{factoryId}/available-bays")
+    public ResponseEntity<ApiResponseDto<List<BayDropdownDto>>> getAvailableBays(@PathVariable Long factoryId) {
+        ApiResponseDto<List<BayDropdownDto>> response = plantHeadService.getAvailableBays(factoryId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/allworkers")
+    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAllWorkers(
+            @RequestParam(required = false) Long factoryId,
+            @ModelAttribute WorkerFilterSortDto filter) {
+
+        ApiResponseDto<List<WorkerListResponseDto>> response = plantHeadService.getAllWorkers(filter, factoryId);
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

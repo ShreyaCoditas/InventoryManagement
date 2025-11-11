@@ -23,5 +23,20 @@ public class CloudinaryService {
             throw new RuntimeException("Image upload failed: " + e.getMessage());
         }
     }
+
+    public void delete(String publicId) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException e) {
+            System.err.println("Failed to delete image: " + publicId);
+        }
+    }
+
+    public String extractPublicId(String url) {
+        if (url == null) return null;
+        int start = url.lastIndexOf("/") + 1;
+        int end = url.lastIndexOf(".");
+        return end > start ? url.substring(start, end) : null;
+    }
 }
 

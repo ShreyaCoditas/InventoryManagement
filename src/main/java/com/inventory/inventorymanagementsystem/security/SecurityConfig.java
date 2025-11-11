@@ -59,13 +59,14 @@ public class SecurityConfig {
 
 
 
+
                         .requestMatchers("api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
-                                .requestMatchers("api/worker/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("api/worker//{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("api/worker/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/owner/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/owner/{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("api/owner/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("api/profile/upload-image").hasRole("OWNER")
                                 .requestMatchers("/api/merchandise/**").hasRole("OWNER")
-                                .requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
+                                //.requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
 
                                 .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
 

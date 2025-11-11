@@ -11,6 +11,7 @@ public interface FactoryRepository extends JpaRepository<Factory,Long>, JpaSpeci
     // Fetch factories without any Plant Head assigned
     @Query("SELECT f FROM Factory f WHERE f.plantHead IS NULL")
     List<Factory> findUnassignedFactories();
+    List<Factory> findByPlantHeadIsNull();
 
     List<Factory> findByPlantHeadId(Long plantHeadId);
 }

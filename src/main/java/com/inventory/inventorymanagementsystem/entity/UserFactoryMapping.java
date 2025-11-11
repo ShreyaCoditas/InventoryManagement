@@ -36,4 +36,10 @@ public class UserFactoryMapping {
     @Enumerated(EnumType.STRING)
     @Column(name = "assigned_role")
     private RoleName assignedRole;
+
+    public UserFactoryMapping(User user, Factory factory, RoleName assignedRole) {
+        this.user = user;
+        this.factory = factory;
+        this.assignedRole = assignedRole;
+    }
 }

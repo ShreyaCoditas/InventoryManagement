@@ -10,6 +10,7 @@ import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.specifications.WorkerSpecifications;
 import com.inventory.inventorymanagementsystem.util.PaginationUtil;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -55,58 +57,8 @@ public class PlantHeadService {
 
     private static final int MAX_CAPACITY = 50;
 
-
-//    public PlantHeadResponseDto createPlantHead(CreatePlantHeadRequestDto request, User owner) {
-//        Role role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
-//                .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
-//        User existingUser = userRepository.findByEmailIgnoreCase(request.getEmail()).orElse(null);
-//        User savedPlantHead;
-//        if (existingUser == null) {
-//            User user = new User();
-//            user.setUsername(request.getUsername());
-//            user.setEmail(request.getEmail());
-//            String generatedPassword = "default123"; // You can randomize later if needed
-//            user.setPassword(passwordEncoder.encode(generatedPassword));
-//            user.setRole(role);
-//            user.setIsActive(ActiveStatus.ACTIVE);
-//            user.setCreatedAt(LocalDateTime.now());
-//            savedPlantHead = userRepository.save(user);
-//            try {
-//                emailService.sendCredentialsEmail(
-//                        savedPlantHead.getEmail(),
-//                        savedPlantHead.getUsername(),
-//                        generatedPassword,
-//                        "PLANT HEAD"
-//                );
-//                log.info("Email sent to Plant Head: {}", savedPlantHead.getEmail());
-//            } catch (Exception e) {
-//                log.error(" Failed to send email to Plant Head: {}", savedPlantHead.getEmail(), e);
-//            }
-//
-//        } else {
-//            // If user already exists and is a PLANTHEAD, reuse them
-//            if (!existingUser.getRole().getRoleName().equals(RoleName.PLANTHEAD)) {
-//                throw new RuntimeException("User exists but is not a Plant Head");
-//            }
-//            savedPlantHead = existingUser;
-//        }
-//        if (request.getFactoryId() != null) {
-//            Factory factory = factoryRepository.findById(request.getFactoryId())
-//                    .orElseThrow(() -> new RuntimeException("Factory not found with ID: " + request.getFactoryId()));
-//
-//            // Prevent overwriting if the factory already has the same Plant Head
-//            if (factory.getPlantHead() != null && factory.getPlantHead().getId().equals(savedPlantHead.getId())) {
-//            } else {
-//                factory.setPlantHead(savedPlantHead);
-//                factoryRepository.save(factory);
-//            }
-//        }
-//        return new PlantHeadResponseDto(savedPlantHead.getId());
-//    }
-
     @Transactional
     public PlantHeadResponseDto createPlantHead(CreatePlantHeadRequestDto request, User owner) {
-
         String generatedPassword = "default123";
         Role plantHeadRole = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                 .orElseThrow(() -> new IllegalStateException("PLANTHEAD role not seeded"));
@@ -116,7 +68,7 @@ public class PlantHeadService {
                     newUser.setUsername(request.getUsername());
                     newUser.setEmail(request.getEmail());
                     newUser.setPassword(passwordEncoder.encode(generatedPassword));
-                    newUser.setRole(plantHeadRole);  // ← CRITICAL: SET ROLE
+                    newUser.setRole(plantHeadRole);
                     newUser.setIsActive(ActiveStatus.ACTIVE);
                     newUser.setCreatedAt(LocalDateTime.now());
                     return userRepository.save(newUser);
@@ -129,7 +81,6 @@ public class PlantHeadService {
         if (request.getFactoryId() != null) {
             Factory factory = factoryRepository.findById(request.getFactoryId())
                     .orElseThrow(() -> new RuntimeException("Factory not found"));
-
             if (!Objects.equals(factory.getPlantHead(), plantHead)) {
                 factory.setPlantHead(plantHead);
                 factoryRepository.save(factory);
@@ -138,12 +89,7 @@ public class PlantHeadService {
         // Send email only for new users
         if (plantHead.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
             try {
-                emailService.sendCredentialsEmail(
-                        plantHead.getEmail(),
-                        plantHead.getUsername(),
-                        generatedPassword,
-                        "PLANT HEAD"
-                );
+                emailService.sendCredentialsEmail(plantHead.getEmail(), plantHead.getUsername(), generatedPassword, "PLANT HEAD");
             } catch (Exception e) {
                 log.error("Failed to send email to {}", plantHead.getEmail(), e);
             }
@@ -167,94 +113,67 @@ public class PlantHeadService {
     public ApiResponseDto<List<PlantHeadDto>> getAllPlantHeads() {
         Role role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                 .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
-
         List<User> plantHeads = userRepository.findByRole(role);
-
         List<PlantHeadDto> result = plantHeads.stream()
                 .map(u -> new PlantHeadDto(u.getId(), u.getUsername(), u.getEmail(), u.getIsActive().name()))
                 .toList();
-
         return new ApiResponseDto<>(true, "Plant Heads fetched successfully", result);
     }
 
     @Transactional
     public ApiResponseDto<WorkerResponseDto> createWorker(CreateWorkerRequestDto dto, UserPrincipal currentUser) {
-        RoleName role = currentUser.getUser().getRole().getRoleName();
-        Long factoryId;
-        if (role.equals(RoleName.PLANTHEAD)) {
-            if (dto.getFactoryId() == null) {
-                return new ApiResponseDto<>(false, "Factory ID is required for Plant Head", null);
-            }
-            factoryId = dto.getFactoryId();
-        }
-        else if (role.equals(RoleName.CHIEFSUPERVISOR)) {
-            factoryId = userFactoryMappingRepository.findFactoryIdByUserId(currentUser.getUser().getId())
-                    .orElseThrow(() -> new RuntimeException("Factory not found for Chief Supervisor"));
-        }
-        else {
-            return new ApiResponseDto<>(false, "Only Plant Head or Chief Supervisor can create workers", null);
-        }
+
+        Long factoryId = dto.getFactoryId() != null
+                ? dto.getFactoryId()
+                : userFactoryMappingRepository.findFactoryIdByUserId(currentUser.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("Factory not found for current user"));
+
         Factory factory = factoryRepository.findById(factoryId)
                 .orElseThrow(() -> new RuntimeException("Factory not found"));
         Bay bay = bayRepository.findById(dto.getBayId())
                 .orElseThrow(() -> new RuntimeException("Bay not found"));
-        if (!bay.getFactory().getId().equals(factory.getId())) {
-            return new ApiResponseDto<>(false, "Bay does not belong to this factory", null);
-        }
-        long currentWorkers = userFactoryMappingRepository.countByBayIdAndAssignedRole(bay.getId(), RoleName.WORKER);
-        final int MAX_CAPACITY = 50; // fixed limit per bay
-        if (currentWorkers >= MAX_CAPACITY) {
-            return new ApiResponseDto<>(false, "Bay capacity full. Select another bay.", null);
-        }
 
-        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
+        if (!bay.getFactory().getId().equals(factoryId))
+            return new ApiResponseDto<>(false, "Bay does not belong to this factory", null);
+
+        if (userFactoryMappingRepository.countByBayIdAndAssignedRole(bay.getId(), RoleName.WORKER) >= 50)
+            return new ApiResponseDto<>(false, "Bay capacity full. Select another bay.", null);
+
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail()))
             return new ApiResponseDto<>(false, "User already exists with this email", null);
-        }
+
+        // Dynamically fetch role instead of hardcoding
         Role workerRole = roleRepository.findByRoleName(RoleName.WORKER.name())
                 .orElseThrow(() -> new RuntimeException("Role not found: WORKER"));
-        String generatedPassword = "default123";
-        User worker = new User();
-        worker.setUsername(dto.getName());
-        worker.setEmail(dto.getEmail());
-        worker.setPassword(passwordEncoder.encode(generatedPassword));
-        worker.setRole(workerRole);
-        worker.setIsActive(ActiveStatus.ACTIVE);
-        worker.setCreatedAt(LocalDateTime.now());
-        userRepository.save(worker);
 
-        //  Map worker → factory → bay
-        UserFactoryMapping mapping = new UserFactoryMapping();
-        mapping.setUser(worker);
-        mapping.setFactory(factory);
-        mapping.setBayId(String.valueOf(bay.getId()));
-        mapping.setAssignedRole(RoleName.WORKER);
-        userFactoryMappingRepository.save(mapping);
+        // Create Worker
+        User worker = userRepository.save(User.builder()
+                .username(dto.getName())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode("default123"))
+                .role(workerRole)
+                .isActive(ActiveStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build());
 
-        try {
-            emailService.sendCredentialsEmail(
-                    worker.getEmail(),
-                    worker.getUsername(),
-                    generatedPassword,
-                    "WORKER"
-            );
-        } catch (Exception e) {
-            log.error(" Failed to send worker email: {}", worker.getEmail(), e);
-        }
+        // Map Worker → Factory → Bay
+        userFactoryMappingRepository.save(UserFactoryMapping.builder()
+                .user(worker)
+                .factory(factory)
+                .bayId(String.valueOf(bay.getId()))
+                .assignedRole(RoleName.WORKER)
+                .build());
 
-        // Build response
-        WorkerResponseDto response = new WorkerResponseDto(
-                worker.getId(),
-                worker.getUsername(),
-                worker.getEmail(),
-                factory.getId(),
-                factory.getName(),
-                bay.getId(),
-                bay.getBayName(),
-                worker.getIsActive().name()
-        );
+        // Send credentials asynchronously
+        sendCredentials(worker, "WORKER");
 
-        return new ApiResponseDto<>(true, "Worker created successfully and assigned to " + bay.getBayName(), response);
+        return new ApiResponseDto<>(true, "Worker created successfully",
+                new WorkerResponseDto(worker.getId(), worker.getUsername(), worker.getEmail(),
+                        factory.getId(), factory.getName(), bay.getId(), bay.getBayName(),
+                        worker.getIsActive().name()));
     }
+
 
     public ApiResponseDto<List<BayDropdownDto>> getAvailableBays(Long factoryId) {
         log.info("🔍 Fetching available bays for factoryId: {}", factoryId);
@@ -329,5 +248,26 @@ public class PlantHeadService {
 
         return new ApiResponseDto<>(true, "Workers fetched successfully", workers);
     }
+
+
+
+           public ApiResponseDto<List<FactoryListDto>> getUnassignedFactories() {
+            List<FactoryListDto> factories = factoryRepository.findByPlantHeadIsNull().stream()
+                    .map(f -> new FactoryListDto(f.getId(), f.getName()))
+                    .toList();
+            return new ApiResponseDto<>(true, "Unassigned factories fetched successfully", factories);
+        }
+
+
+
+    @Async
+    private void sendCredentials(User user, String role) {
+        try {
+            emailService.sendCredentialsEmail(user.getEmail(), user.getUsername(), "default123", role);
+        } catch (Exception e) {
+            log.error("Failed to send credentials to {}", user.getEmail(), e);
+        }
+    }
+
 
 }
