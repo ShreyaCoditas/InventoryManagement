@@ -3,10 +3,13 @@ package com.inventory.inventorymanagementsystem.paginationsortingdto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class WorkerFilterSortDto extends BaseFilterSortDto {
     private String location;  // Filter by factory location (city)
-    private String status;    // ACTIVE / INACTIVE
+    private String status;
+    private List<String> locations; // ACTIVE / INACTIVE
 }
 

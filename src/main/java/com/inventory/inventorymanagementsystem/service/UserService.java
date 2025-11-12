@@ -91,11 +91,14 @@ public class UserService {
     @Transactional
     public ApiResponseDto<List<UserListDto>> getAllUsersByRole(String roleType, UserFilterSortDto filter) {
 
-        Specification<User> spec = UserSpecifications.withFilters(
-                filter.getName(),
-                filter.getStatus(),
-                filter.getCreatedAfter(),
-                filter.getCreatedBefore()
+        Specification<User> spec = Specification.allOf(
+                UserSpecifications.withFilters(
+                        filter.getName(),
+                        filter.getStatus(),
+                        filter.getStatuses(),   // ✅ new field added
+                        filter.getCreatedAfter(),
+                        filter.getCreatedBefore()
+                )
         );
 
         Role role;

@@ -16,12 +16,14 @@ public class FactoryDto {
     private int totalWorkers;
     private int totalTools;
     private String status;
-    private String chiefSupervisorName;  // ✅ New field
+    private String chiefSupervisorName;
+    private String address;// ✅ New field
+    private Long plantHeadId;
 
     // Optional: If you want to keep an explicit constructor for clarity
     public FactoryDto(Long factoryId, String factoryName, String location, String plantHeadName,
                       int totalProducts, int totalWorkers, int totalTools, String status,
-                      String chiefSupervisorName) {
+                      String chiefSupervisorName,String address,Long plantHeadId) {
         this.factoryId = factoryId;
         this.factoryName = factoryName;
         this.location = location;
@@ -31,5 +33,7 @@ public class FactoryDto {
         this.totalTools = totalTools;
         this.status = status;
         this.chiefSupervisorName = chiefSupervisorName;
+        this.address=address;
+        this.plantHeadId=plantHeadId;
     }
 }

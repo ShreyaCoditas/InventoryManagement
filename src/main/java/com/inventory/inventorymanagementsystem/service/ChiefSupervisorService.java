@@ -12,7 +12,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -55,13 +54,12 @@ public class ChiefSupervisorService {
         return new ApiResponseDto<>(true, "Chief Supervisor created successfully", response);
     }
 
+
     public ApiResponseDto<List<ChiefSupervisorResponseDto>> getAllSupervisors() {
         List<UserFactoryMapping> mappings = userFactoryRepository.findByAssignedRole(RoleName.CHIEFSUPERVISOR);
-
         List<ChiefSupervisorResponseDto> result = mappings.stream().map(map -> {
             User u = map.getUser();
             Factory f = map.getFactory();
-
             return new ChiefSupervisorResponseDto(
                     u.getId(),
                     u.getUsername(),
@@ -98,9 +96,13 @@ public class ChiefSupervisorService {
                     u.getIsActive().name()
             );
         }).toList();
-
         return new ApiResponseDto<>(true, "Supervisors fetched successfully for factory ID: " + factoryId, supervisors);
     }
+
+
+
+
+
 
     private User createNewChiefSupervisor(CreateChiefSupervisorRequestDto dto) {
         Role role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())

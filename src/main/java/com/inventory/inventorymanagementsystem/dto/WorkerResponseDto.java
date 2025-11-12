@@ -1,17 +1,16 @@
 package com.inventory.inventorymanagementsystem.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
 public class WorkerResponseDto {
     private Long workerId;
-    private String name;
-    private String email;
-    private Long factoryId;
+    private String workerName;
     private String factoryName;
-    private Long bayId;
-    private String bayName;
-    private String status;
+    private Long factoryId;        // Added
+    private String location;
+    private String bayArea;
+    private String status;        // ACTIVE / INACTIVE
 }

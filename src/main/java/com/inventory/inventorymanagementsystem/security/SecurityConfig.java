@@ -54,8 +54,11 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
-
                                 .requestMatchers("/api/owner/planthead/factories").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/owner/worker/getall").hasRole("OWNER")
+                                .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("api/owner//{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
+
 
 
 
@@ -69,6 +72,7 @@ public class SecurityConfig {
                                 //.requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
 
                                 .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/worker/**").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
 
                                 .requestMatchers("/api/products/**").hasRole("OWNER")
                         .requestMatchers("/api/owner/**").hasRole("OWNER")

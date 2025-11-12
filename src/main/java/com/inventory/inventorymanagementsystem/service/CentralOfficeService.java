@@ -15,7 +15,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -62,6 +61,7 @@ public class CentralOfficeService {
         );
         return new ApiResponseDto<>(true, "Central Officer added successfully", null);
     }
+
 
     @Transactional
     public ApiResponseDto<Void> updateCentralOfficer(Long id, AddCentralOfficerDto dto) {

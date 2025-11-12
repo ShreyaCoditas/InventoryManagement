@@ -9,7 +9,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tools")
@@ -20,7 +19,7 @@ public class ToolController {
 
     @PostMapping(value = "/create", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponseDto<ToolResponseDto>> createTool(
-            @Valid @ModelAttribute ToolRequestDto dto,
+            @Valid @ModelAttribute ToolDto dto,
             BindingResult result) {
 
         if (result.hasErrors()) {
@@ -45,31 +44,22 @@ public class ToolController {
         return ResponseEntity.ok(toolService.updateTool(id, dto));
     }
 
-//    @GetMapping("/getalltools")
-//    public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "id") String sortBy,
-//            @RequestParam(defaultValue = "asc") String sortDir,
-//            @RequestParam(required = false) String availability) {  // ← NEW
-//        return ResponseEntity.ok(
-//                toolService.getAllTools(page, size, sortBy, sortDir, availability)
-//        );
-//    }
 
-    @GetMapping("/getalltools")
+    @GetMapping("/getAll")
     public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String availability,
-            @RequestParam(required = false) Long factoryId) {   // NEW
+            @RequestParam(required = false) Long factoryId,
+            @RequestParam(required = false) List<String> categoryNames) {
 
-        return ResponseEntity.ok(
-                toolService.getAllTools(page, size, sortBy, sortDir, availability, factoryId)
-        );
+        ApiResponseDto<List<ToolResponseDto>> response =
+                toolService.getAllTools(page, size, sortBy, sortDir, availability, factoryId, categoryNames);
+        return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponseDto<ToolResponseDto>> getToolById(@PathVariable Long id) {

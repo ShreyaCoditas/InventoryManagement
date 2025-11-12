@@ -3,9 +3,7 @@ package com.inventory.inventorymanagementsystem.specifications;
 import com.inventory.inventorymanagementsystem.entity.Merchandise;
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import org.springframework.data.jpa.domain.Specification;
-
 import java.time.LocalDateTime;
-
 public class MerchandiseSpecifications {
 
     public static Specification<Merchandise> hasName(String name) {

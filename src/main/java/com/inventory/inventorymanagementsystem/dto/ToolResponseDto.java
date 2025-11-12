@@ -11,6 +11,7 @@ public class ToolResponseDto {
     private String name;
     private String description;
     private String categoryName;
+    private Long categoryId;
     private String imageUrl;
     private String isPerishable;
     private String isExpensive;

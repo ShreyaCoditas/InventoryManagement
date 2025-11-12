@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -56,67 +57,67 @@ public class User {
 
     // Bidirectional - One User (Plant Head) has Many Factories
     @OneToMany(mappedBy = "plantHead", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<Factory> managedFactories;
+    private List<Factory> managedFactories = new ArrayList<>();
 
     // Bidirectional - One User has Many UserFactoryMappings
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<UserFactoryMapping> userFactoryMappings;
+    private List<UserFactoryMapping> userFactoryMappings = new ArrayList<>();
 
     // Bidirectional - One User (Central Officer) has Many UserCentralOfficeMappings
     @OneToMany(mappedBy = "centralOfficer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<UserCentralOfficeMapping> userCentralOfficeMappings;
+    private List<UserCentralOfficeMapping> userCentralOfficeMappings = new ArrayList<>();
 
     // Bidirectional - One User (Worker) has Many ToolRequests
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolRequest> toolRequests;
+    private List<ToolRequest> toolRequests = new ArrayList<>();
 
     // Bidirectional - One User (Approver) has Many ApprovedToolRequests
     @OneToMany(mappedBy = "approvedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<ToolRequest> approvedToolRequests;
+    private List<ToolRequest> approvedToolRequests = new ArrayList<>();
 
     // Bidirectional - One User (Worker) has Many ToolExtensions
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolExtension> toolExtensions;
+    private List<ToolExtension> toolExtensions = new ArrayList<>();
 
     // Bidirectional - One User (Approver) has Many ApprovedToolExtensions
     @OneToMany(mappedBy = "approvedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<ToolExtension> approvedToolExtensions;
+    private List<ToolExtension> approvedToolExtensions = new ArrayList<>();
 
     // Bidirectional - One User has Many ToolReturns (updated_by)
     @OneToMany(mappedBy = "updatedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<ToolReturn> toolReturns;
+    private List<ToolReturn> toolReturns = new ArrayList<>();
 
     // Bidirectional - One User has Many ToolRestockRequests
     @OneToMany(mappedBy = "restockedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolRestockRequest> toolRestockRequests;
+    private List<ToolRestockRequest> toolRestockRequests = new ArrayList<>();
 
     // Bidirectional - One User has Many FactoriesInventoryStock (added_by)
     @OneToMany(mappedBy = "addedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<FactoryInventoryStock> addedInventoryStock;
+    private List<FactoryInventoryStock> addedInventoryStock = new ArrayList<>();
 
     // Bidirectional - One User (Distributor) has Many DistributorOrders
     @OneToMany(mappedBy = "distributor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<DistributorOrder> distributorOrders;
+    private List<DistributorOrder> distributorOrders = new ArrayList<>();
 
     // Bidirectional - One User (Customer) has Many CustomerDistributorMappings
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CustomerDistributorMapping> customerMappings;
+    private List<CustomerDistributorMapping> customerMappings = new ArrayList<>();
 
     // Bidirectional - One User (Distributor) has Many DistributorMappings
     @OneToMany(mappedBy = "distributor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CustomerDistributorMapping> distributorMappings;
+    private List<CustomerDistributorMapping> distributorMappings = new ArrayList<>();
 
     // Bidirectional - One User (Customer) has Many Invoices
     @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<Invoice> customerInvoices;
+    private List<Invoice> customerInvoices = new ArrayList<>();
 
     // Bidirectional - One User (Distributor) has Many Invoices
     @OneToMany(mappedBy = "distributor", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<Invoice> distributorInvoices;
+    private List<Invoice> distributorInvoices = new ArrayList<>();
 
     // Bidirectional - One User (Distributor) has Many DistributorInventories
     @OneToMany(mappedBy = "distributor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<DistributorInventory> distributorInventories;
+    private List<DistributorInventory> distributorInventories = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

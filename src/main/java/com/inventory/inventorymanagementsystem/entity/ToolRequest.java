@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,7 +21,7 @@ public class ToolRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tool_id")
@@ -52,7 +53,7 @@ public class ToolRequest {
 
     // Bidirectional - One ToolRequest has Many ToolIssuances
     @OneToMany(mappedBy = "toolRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolIssuance> toolIssuances;
+    private List<ToolIssuance> toolIssuances = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
