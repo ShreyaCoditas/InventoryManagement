@@ -1,5 +1,4 @@
 pipeline {
-
     agent {label "java-jenkins-agent"}
 
     environment {
