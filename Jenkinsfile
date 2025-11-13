@@ -66,7 +66,6 @@ pipeline {
             }
         }
 
-
         stage('Deploy on Private Server') {
             steps {
                 sshagent(credentials: ['newnewnew']) {
@@ -113,6 +112,7 @@ pipeline {
                 message: "${env.JOB_NAME}: Build #${env.BUILD_NUMBER} -> SUCCESS"
             )
         }
+        
         failure {
             googlechatnotification(
                 url: "id:gchat-jenkins-webhook",
