@@ -46,6 +46,9 @@ pipeline {
                 withCredentials([string(credentialsId: 'ECR_URI', variable: 'ECR_REPO')]) {
                     sh """
                         export PATH=\$PATH:/usr/local/bin
+                        export AWS_PROFILE=default
+                        export AWS_CONFIG_FILE=/home/ubuntu/.aws/config
+                        export AWS_SHARED_CREDENTIALS_FILE=/home/ubuntu/.aws/credentials
 
                         echo "Login to ECR"
                         aws ecr get-login-password --region ${AWS_REGION} \
