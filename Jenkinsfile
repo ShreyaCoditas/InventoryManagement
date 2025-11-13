@@ -23,7 +23,6 @@ pipeline {
             }
         }
 
-
         stage("Build for static analysis") {
             steps {
                 sh "mvn clean install -DskipTests"
