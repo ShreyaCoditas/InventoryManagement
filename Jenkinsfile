@@ -76,33 +76,9 @@ pipeline {
                 string(credentialsId: 'shreya_ios_java', variable: 'ENV_VARS')
             ]) {
                 sh """
-                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-                        echo 'Creating temporary env file'
-                        aws secretsmanager get-secret-value --secret-id shreya_ios_java --query SecretString --output text > /tmp/inventory.env
-
-                        chmod 600 /tmp/inventory_env
-
-                        echo 'Login to ECR'
-                        aws ecr get-login-password --region ${AWS_REGION} \
-                            | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
-
-                        echo 'Stopping old container'
-                        docker stop ${CONTAINER_NAME} || true
-
-                        echo 'Removing old container'
-                        docker rm -f ${CONTAINER_NAME} || true
-
-                        echo 'Starting new container'
-                        docker run -d --name ${CONTAINER_NAME} --restart always -p 5000:5000 \
-                            --env-file /tmp/inventory_env \
-                            \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
-
-                        echo 'Deleting temporary env file'
-                        rm -f /tmp/inventory.env
-
-                        echo 'Pruning old images'
-                        docker image prune -f
-                    "
+                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
+                        bash /home/ubuntu/docker_run.sh $ECR_REPO ${IMAGE_TAG} > /home/ubuntu/logs.txt
+                    '
                 """
                 }
             }
