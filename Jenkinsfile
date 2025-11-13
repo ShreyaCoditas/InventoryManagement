@@ -49,17 +49,17 @@ pipeline {
 
                         echo "Login to ECR"
                         aws ecr get-login-password --region ${AWS_REGION} \
-                        | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system
+                        | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
 
                         echo "Building Image: ${IMAGE_TAG}"
-                        docker build -t \$ECR_REPO/inventory_management_system:${IMAGE_TAG} .
+                        docker build -t \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG} .
 
                         echo "Pushing image"
-                        docker push \$ECR_REPO/inventory_management_system:${IMAGE_TAG}
+                        docker push \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
 
                         echo "Tag & push latest"
-                        docker tag \$ECR_REPO/inventory_management_system:${IMAGE_TAG} \$ECR_REPO:latest
-                        docker push \$ECR_REPO/inventory_management_system:latest
+                        docker tag \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG} \$ECR_REPO:latest
+                        docker push \$ECR_REPO/inventory_management_system_java:latest
                     """
                 }
             }
@@ -73,7 +73,7 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
                                 echo 'Login to ECR'
                                 aws ecr get-login-password --region ${AWS_REGION} \
-                                | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system
+                                | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
 
                                 echo 'Stopping old container'
                                 docker stop ${CONTAINER_NAME} || true
@@ -92,7 +92,7 @@ pipeline {
                                     -e SUPER_ADMIN_EMAIL=\${SUPER_ADMIN_EMAIL} \
                                     -e SUPER_ADMIN_PASSWORD=\${SUPER_ADMIN_PASSWORD} \
                                     -e API_KEY=\${API_KEY} \
-                                    \$ECR_REPO/inventory_management_system:\${IMAGE_TAG}
+                                    \$ECR_REPO/inventory_management_system_java:\${IMAGE_TAG}
 
                                 echo 'Pruning old images'
                                 docker image prune -f
