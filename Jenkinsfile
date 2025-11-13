@@ -61,7 +61,7 @@ pipeline {
                         docker push \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
 
                         echo "Tag & push latest"
-                        docker tag \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG} \$ECR_REPO:latest
+                        docker tag \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG} \$ECR_REPO/inventory_management_system_java:latest
                         docker push \$ECR_REPO/inventory_management_system_java:latest
                     """
                 }
