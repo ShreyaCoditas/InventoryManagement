@@ -22,15 +22,12 @@ public class MerchandiseService {
     private  MerchandiseRepository merchandiseRepository;
 
     public ApiResponseDto<MerchandiseResponseDto> createMerchandise(MerchandiseRequestDto dto) {
-
-
         String normalizedName = normalizeName(dto.getName());
         boolean exists = merchandiseRepository.findAll().stream()
                 .anyMatch(m -> normalizeName(m.getName()).equalsIgnoreCase(normalizedName));
         if (exists) {
             return new ApiResponseDto<>(false, "Merchandise already exists with a similar name", null);
         }
-
         Merchandise merchandise = Merchandise.builder()
                 .name(dto.getName().trim())
                 .image(dto.getImage())
@@ -40,18 +37,13 @@ public class MerchandiseService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-
         merchandiseRepository.save(merchandise);
-
         return new ApiResponseDto<>(true, "Merchandise created successfully", buildResponseDto(merchandise));
     }
-
-
 
     public ApiResponseDto<MerchandiseResponseDto> updateMerchandise(Long id, MerchandiseRequestDto dto) {
         Merchandise merchandise = merchandiseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Merchandise not found with id: " + id));
-
         if (dto.getName() != null) merchandise.setName(dto.getName());
         if (dto.getImage() != null) merchandise.setImage(dto.getImage());
         if (dto.getRewardPoints() != null) merchandise.setRewardPoints(dto.getRewardPoints());
@@ -66,17 +58,14 @@ public class MerchandiseService {
     public ApiResponseDto<String> softDeleteMerchandise(Long id) {
         Merchandise merchandise = merchandiseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Merchandise not found with id: " + id));
-
         if (merchandise.getIsActive() == ActiveStatus.INACTIVE) {
             return new ApiResponseDto<>(false, "Merchandise already inactive", null);
         }
-
         merchandise.setIsActive(ActiveStatus.INACTIVE);
         merchandise.setUpdatedAt(LocalDateTime.now());
         merchandiseRepository.save(merchandise);
         return new ApiResponseDto<>(true, "Merchandise soft deleted successfully", "INACTIVE");
     }
-
 
 
 

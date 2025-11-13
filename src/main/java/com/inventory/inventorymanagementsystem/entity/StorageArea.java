@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,7 +21,7 @@ public class StorageArea {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "factory_id")
@@ -56,7 +57,7 @@ public class StorageArea {
 
     // Bidirectional - One StorageArea has Many ToolStorageMappings
     @OneToMany(mappedBy = "storageArea", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolStorageMapping> toolStorageMappings;
+    private List<ToolStorageMapping> toolStorageMappings = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

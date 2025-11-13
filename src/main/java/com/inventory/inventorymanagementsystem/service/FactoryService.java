@@ -102,60 +102,9 @@ public class FactoryService {
     }
 
 
-//    @Transactional
-//    public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-//        Specification<Factory> spec = FactorySpecifications.withFilters(
-//                filter.getLocation(),
-//                filter.getPlantHeadName(),
-//                filter.getStatus()
-//        );
-//        Sort sort = Sort.by(filter.getSortBy());
-//        if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
-//            sort = sort.descending();
-//        }
-//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-//        Page<Factory> factoryPage = factoryRepository.findAll(spec, pageable);
-//        List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
-//
-//            String plantHeadName = factory.getPlantHead() != null
-//                    ? factory.getPlantHead().getUsername()
-//                    : "Unassigned";
-//
-//            // Total products (from production table)
-//            int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
-//
-//            // Total workers (from user-factory mapping)
-//            int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
-//
-//            // Total tools (from inventory stock or tools table)
-//            int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
-//            return new FactoryDto(
-//                    factory.getId(),
-//                    factory.getName(),
-//                    factory.getCity(),
-//                    plantHeadName,
-//                    chiefsupervisor,
-//                    totalProducts,
-//                    totalWorkers,
-//                    totalTools,
-//                    factory.getIsActive().name()
-//            );
-//        }).toList();
-//        Map<String, Object> pagination = PaginationUtil.build(factoryPage);
-//
-//        return new ApiResponseDto<>(
-//                true,
-//                "Factories fetched successfully",
-//                factories,
-//                pagination
-//        );
-//    }
-
-
     @Transactional
     public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
         Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
-
         Sort sort = Sort.by(filter.getSortBy());
         if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
             sort = sort.descending();
@@ -187,12 +136,13 @@ public class FactoryService {
                     totalWorkers,
                     totalTools,
                     factory.getIsActive().name(),
-                    chiefSupervisorName
-            );
+                    chiefSupervisorName,
+                    factory.getAddress(),
+                    factory.getPlantHead() != null ? factory.getPlantHead().getId() : null
+                    );
         }).toList();
 
         Map<String, Object> pagination = PaginationUtil.build(factoryPage);
-
         return new ApiResponseDto<>(
                 true,
                 "Factories fetched successfully",

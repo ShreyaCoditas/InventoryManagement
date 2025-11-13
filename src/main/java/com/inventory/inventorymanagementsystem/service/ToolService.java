@@ -4,17 +4,16 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.*;
 import com.inventory.inventorymanagementsystem.repository.*;
+import com.inventory.inventorymanagementsystem.specifications.ToolSpecifications;
 import com.inventory.inventorymanagementsystem.util.PaginationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class ToolService {
     private final CloudinaryService cloudinaryService;
 
     // CREATE TOOL
-    public ApiResponseDto<ToolResponseDto> createTool(ToolRequestDto dto) {
+    public ApiResponseDto<ToolResponseDto> createTool(ToolDto dto) {
         if (toolRepository.existsByNameIgnoreCase(dto.getName().trim())) {
             return new ApiResponseDto<>(false, "Tool already exists", null);
         }
@@ -49,7 +48,7 @@ public class ToolService {
         return new ApiResponseDto<>(true, "Tool created", buildResponse(tool));
     }
 
-    // UPDATE TOOL
+     //UPDATE TOOL
     public ApiResponseDto<ToolResponseDto> updateTool(Long id, UpdateToolDto dto) {
         Tool tool = toolRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tool not found"));
@@ -81,67 +80,6 @@ public class ToolService {
         return new ApiResponseDto<>(true, "Tool updated", buildResponse(tool));
     }
 
-//    // GET ALL TOOLS
-//    public ApiResponseDto<List<ToolResponseDto>> getAllTools(
-//            int page, int size, String sortBy, String sortDir, String availability) {
-//        Sort sort = "desc".equalsIgnoreCase(sortDir)
-//                ? Sort.by(sortBy).descending()
-//                : Sort.by(sortBy).ascending();
-//        Pageable pageable = PageRequest.of(page, size, sort);
-//        Page<Tool> toolPage = toolRepository.findByIsActive(ActiveStatus.ACTIVE, pageable);
-//        List<ToolResponseDto> dtos = toolPage.getContent().stream()
-//                .filter(tool -> {
-//                    if (availability == null) return true;
-//                    boolean inStock = tool.getAvailableQuantity() > 0;
-//                    return "InStock".equalsIgnoreCase(availability) ? inStock : !inStock;
-//                })
-//                .map(this::buildResponse)
-//                .toList();
-//        Map<String, Object> pagination = PaginationUtil.build(toolPage); // original count
-//        return new ApiResponseDto<>(true, "Tools fetched", dtos, pagination);
-//    }
-
-    public ApiResponseDto<List<ToolResponseDto>> getAllTools(
-            int page, int size, String sortBy, String sortDir,
-            String availability, Long factoryId) {
-
-        Sort sort = "desc".equalsIgnoreCase(sortDir)
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        // 1. Get active tools (always)
-        Page<Tool> toolPage = toolRepository.findByIsActive(ActiveStatus.ACTIVE, pageable);
-
-        // 2. If factoryId supplied → filter tools that have at least one storage in that factory
-        List<Tool> filteredTools = toolPage.getContent();
-        if (factoryId != null) {
-            Set<Long> toolIdsInFactory = storageAreaRepository
-                    .findToolIdsByFactoryId(factoryId);               // ← custom query
-            filteredTools = filteredTools.stream()
-                    .filter(t -> toolIdsInFactory.contains(t.getId()))
-                    .toList();
-        }
-
-        // 3. Build DTOs + availability filter
-        List<ToolResponseDto> dtos = filteredTools.stream()
-                .map(this::buildResponse)
-                .filter(dto -> availability == null ||
-                        ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0) ||
-                        ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
-                .toList();
-
-        // 4. Manual sort by quantity (DB cannot sort on aggregated column)
-        if ("quantity".equalsIgnoreCase(sortBy)) {
-            dtos.sort("desc".equalsIgnoreCase(sortDir)
-                    ? Comparator.comparing(ToolResponseDto::getAvailableQuantity).reversed()
-                    : Comparator.comparing(ToolResponseDto::getAvailableQuantity));
-        }
-
-        Map<String, Object> pagination = PaginationUtil.build(toolPage);
-        return new ApiResponseDto<>(true, "Tools fetched", dtos, pagination);
-    }
 
     public ApiResponseDto<ToolResponseDto> getToolById(Long id) {
         Tool tool = toolRepository.findByIdAndIsActive(id, ActiveStatus.ACTIVE)
@@ -150,7 +88,7 @@ public class ToolService {
         ToolResponseDto responseDto = buildResponse(tool);
         return new ApiResponseDto<>(true, "Tool fetched successfully", responseDto);
     }
-
+//
     // SOFT DELETE
     public ApiResponseDto<String> softDeleteTool(Long id) {
         Tool tool = toolRepository.findById(id)
@@ -164,7 +102,7 @@ public class ToolService {
         toolRepository.save(tool);
         return new ApiResponseDto<>(true, "Tool deleted", "INACTIVE");
     }
-
+//
     // CATEGORY: GET ALL
     public ApiResponseDto<List<ToolCategoryResponseDto>> getAllCategories() {
         List<ToolCategoryResponseDto> dtos = categoryRepository.findAll()
@@ -173,7 +111,7 @@ public class ToolService {
                 .toList();
         return new ApiResponseDto<>(true, "Categories fetched", dtos);
     }
-
+//
     // CATEGORY: UPDATE
     public ApiResponseDto<ToolCategoryResponseDto> updateCategory(Long id, ToolCategoryRequestDto dto) {
         ToolCategory category = categoryRepository.findById(id)
@@ -188,7 +126,7 @@ public class ToolService {
         category = categoryRepository.save(category);
         return new ApiResponseDto<>(true, "Category updated", toCategoryDto(category));
     }
-
+//
     // CATEGORY: DELETE
     public ApiResponseDto<String> deleteCategory(Long id) {
         ToolCategory cat = categoryRepository.findById(id)
@@ -196,7 +134,7 @@ public class ToolService {
         categoryRepository.delete(cat);
         return new ApiResponseDto<>(true, "Category deleted", null);
     }
-
+//
     // HELPER: Resolve Category
     private ToolCategory resolveCategory(Long id, String name) {
         if (id != null) {
@@ -217,6 +155,132 @@ public class ToolService {
                 });
     }
 
+
+    @Transactional(readOnly = true)
+    public ApiResponseDto<List<ToolResponseDto>> getAllTools(
+            int page, int size, String sortBy, String sortDir,
+            String availability, Long factoryId, List<String> categoryNames) {
+
+        // ✅ Step 1: Normalize sort field
+        if (sortBy == null || sortBy.isBlank()) {
+            sortBy = "id"; // default sort
+        }
+        if ("quantity".equalsIgnoreCase(sortBy)) {
+            sortBy = "availableQuantity"; // handled manually later
+        }
+
+        Sort sort = "desc".equalsIgnoreCase(sortDir)
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // ✅ Step 2: Build JPA Specification (for DB-level filtering)
+        Specification<Tool> spec = Specification.allOf(
+                ToolSpecifications.isActive(),
+                ToolSpecifications.hasCategories(categoryNames)
+        );
+
+        Page<Tool> toolPage = toolRepository.findAll(spec, pageable);
+        List<Tool> tools = new ArrayList<>(toolPage.getContent());
+
+        // ✅ Step 3: Manual filter (factory-based availability - non-DB join)
+        if (factoryId != null) {
+            Set<Long> toolIdsInFactory = storageAreaRepository.findToolIdsByFactoryId(factoryId);
+            tools = tools.stream()
+                    .filter(t -> toolIdsInFactory.contains(t.getId()))
+                    .toList();
+        }
+
+        // ✅ Step 4: Map to DTOs
+        List<ToolResponseDto> dtos = tools.stream()
+                .map(this::buildResponse)
+                .toList();
+
+        // ✅ Step 5: Manual filter (availability computed field)
+        if (availability != null) {
+            dtos = dtos.stream()
+                    .filter(dto ->
+                            ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0) ||
+                                    ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
+                    .toList();
+        }
+
+        // ✅ Step 6: Manual sorting for computed field (quantity)
+        if ("availableQuantity".equalsIgnoreCase(sortBy)) {
+            dtos = dtos.stream()
+                    .sorted("desc".equalsIgnoreCase(sortDir)
+                            ? Comparator.comparing(ToolResponseDto::getAvailableQuantity).reversed()
+                            : Comparator.comparing(ToolResponseDto::getAvailableQuantity))
+                    .toList();
+        }
+
+        // ✅ Step 7: Pagination info
+        Map<String, Object> pagination = PaginationUtil.build(toolPage);
+
+        // ✅ Step 8: Return response
+        return new ApiResponseDto<>(true, "Tools fetched successfully", dtos, pagination);
+    }
+
+//    @Transactional(readOnly = true)
+//    public ApiResponseDto<List<ToolResponseDto>> getAllTools(
+//            int page, int size, String sortBy, String sortDir,
+//            String availability, Long factoryId, List<String> categoryNames) {
+//
+//        // ✅ Normalize sort field
+//        if ("quantity".equalsIgnoreCase(sortBy)) {
+//            sortBy = "availableQuantity";
+//        }
+//
+//        Sort sort = "desc".equalsIgnoreCase(sortDir)
+//                ? Sort.by(sortBy).descending()
+//                : Sort.by(sortBy).ascending();
+//
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//
+//        Page<Tool> toolPage = toolRepository.findByIsActive(ActiveStatus.ACTIVE, pageable);
+//        List<Tool> filteredTools = new ArrayList<>(toolPage.getContent());
+//
+//        if (factoryId != null) {
+//            Set<Long> toolIdsInFactory = storageAreaRepository.findToolIdsByFactoryId(factoryId);
+//            filteredTools = filteredTools.stream()
+//                    .filter(t -> toolIdsInFactory.contains(t.getId()))
+//                    .toList();
+//        }
+//
+//        if (categoryNames != null && !categoryNames.isEmpty()) {
+//            List<String> normalized = categoryNames.stream()
+//                    .flatMap(names -> Arrays.stream(names.split(",")))
+//                    .map(String::trim)
+//                    .map(String::toLowerCase)
+//                    .toList();
+//
+//            filteredTools = filteredTools.stream()
+//                    .filter(t -> t.getCategory() != null &&
+//                            normalized.contains(t.getCategory().getCategoryName().toLowerCase()))
+//                    .toList();
+//        }
+//
+//        List<ToolResponseDto> dtos = filteredTools.stream()
+//                .map(this::buildResponse)
+//                .filter(dto -> availability == null ||
+//                        ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0) ||
+//                        ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
+//                .toList();
+//
+//        // ✅ Manual DTO-level sorting (still fine)
+//        if ("quantity".equalsIgnoreCase(sortBy)) {
+//            dtos.sort("desc".equalsIgnoreCase(sortDir)
+//                    ? Comparator.comparing(ToolResponseDto::getAvailableQuantity).reversed()
+//                    : Comparator.comparing(ToolResponseDto::getAvailableQuantity));
+//        }
+//
+//        Map<String, Object> pagination = PaginationUtil.build(toolPage);
+//        return new ApiResponseDto<>(true, "Tools fetched successfully", dtos, pagination);
+//    }
+
+
+
     // HELPER: Build Response
     private ToolResponseDto buildResponse(Tool tool) {
         int qty = storageAreaRepository.findTotalAvailableQuantityByToolId(tool.getId());
@@ -226,6 +290,7 @@ public class ToolService {
                 .name(tool.getName())
                 .description(tool.getToolDescription())
                 .categoryName(tool.getCategory().getCategoryName())
+                .categoryId(tool.getCategory().getId())
                 .imageUrl(tool.getImageUrl())
                 .isPerishable(tool.getIsPerishable().name())
                 .isExpensive(tool.getIsExpensive().name())

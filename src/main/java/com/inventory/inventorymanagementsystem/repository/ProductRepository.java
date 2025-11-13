@@ -3,6 +3,8 @@ package com.inventory.inventorymanagementsystem.repository;
 import com.inventory.inventorymanagementsystem.entity.Product;
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.entity.ProductCategory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -37,5 +39,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     // Optional: Search products by name (for frontend search bar)
     List<Product> findByNameContainingIgnoreCaseAndIsActive(String name, ActiveStatus status);
+
+    boolean existsByNameIgnoreCase(String trim);
+
+    Page<Product> findByIsActive(ActiveStatus status, Pageable pageable);
 }
 

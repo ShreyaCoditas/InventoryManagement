@@ -1,5 +1,12 @@
 
 package com.inventory.inventorymanagementsystem.dto;
+
+
+//import jakarta.mail.Multipart;
+
+//import jakarta.mail.Multipart;
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,5 +18,5 @@ public class UpdateProductDto {
     private Long categoryId;
     private String newCategoryName;
     private BigDecimal price;
-    private String image;
+    private MultipartFile image;
 }

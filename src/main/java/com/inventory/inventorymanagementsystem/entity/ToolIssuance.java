@@ -4,8 +4,8 @@ package com.inventory.inventorymanagementsystem.entity;
 import com.inventory.inventorymanagementsystem.constants.ToolIssuanceStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,7 +20,7 @@ public class ToolIssuance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tool_request_id")
@@ -42,7 +42,7 @@ public class ToolIssuance {
 
     // Bidirectional - One ToolIssuance has Many ToolReturns
     @OneToMany(mappedBy = "toolIssuance", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolReturn> toolReturns;
+    private List<ToolReturn> toolReturns = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

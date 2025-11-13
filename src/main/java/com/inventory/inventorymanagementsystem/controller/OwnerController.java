@@ -10,8 +10,10 @@ import com.inventory.inventorymanagementsystem.service.*;
 import com.inventory.inventorymanagementsystem.service.CentralOfficeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -183,14 +185,14 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/create/workers")
-    public ResponseEntity<ApiResponseDto<WorkerResponseDto>> createWorker(
-            @RequestBody CreateWorkerRequestDto request,
-            @AuthenticationPrincipal UserPrincipal currentUser) {
-
-        ApiResponseDto<WorkerResponseDto> response = plantHeadService.createWorker(request, currentUser);
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/create/workers")
+//    public ResponseEntity<ApiResponseDto<WorkerResponseDto>> createWorker(
+//            @RequestBody CreateWorkerRequestDto request,
+//            @AuthenticationPrincipal UserPrincipal currentUser) {
+//
+//        ApiResponseDto<WorkerResponseDto> response = plantHeadService.createWorker(request, currentUser);
+//        return ResponseEntity.ok(response);
+//    }
 
     @GetMapping("/{factoryId}/available-bays")
     public ResponseEntity<ApiResponseDto<List<BayDropdownDto>>> getAvailableBays(@PathVariable Long factoryId) {
@@ -198,15 +200,80 @@ public class OwnerController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/allworkers")
-    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAllWorkers(
-            @RequestParam(required = false) Long factoryId,
-            @ModelAttribute WorkerFilterSortDto filter) {
+//    @GetMapping("/allworkers")
+//    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAllWorkers(
+//            @RequestParam(required = false) Long factoryId,
+//            @ModelAttribute WorkerFilterSortDto filter) {
+//
+//        ApiResponseDto<List<WorkerListResponseDto>> response = plantHeadService.getAllWorkers(filter, factoryId);
+//        return ResponseEntity.ok(response);
+//    }
 
-        ApiResponseDto<List<WorkerListResponseDto>> response = plantHeadService.getAllWorkers(filter, factoryId);
-        return ResponseEntity.ok(response);
+    // CREATE
+    @PostMapping(value = "/worker/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponseDto<String>> create(
+            @Valid @ModelAttribute CreateWorkerRequestDto dto,
+            BindingResult result,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        if (result.hasErrors()) {
+            String errorMsg = result.getFieldErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseDto<>(false, errorMsg, null));
+        }
+
+        plantHeadService.createWorker(dto, currentUser);
+        return ResponseEntity.ok(new ApiResponseDto<>(true, "worker,created", null));
     }
 
+    // UPDATE
+//    @PutMapping(value = "/worker/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<ApiResponseDto<String>> update(
+//            @PathVariable Long id,
+//            @ModelAttribute @Valid UpdateWorkerDto dto,
+//            @AuthenticationPrincipal UserPrincipal currentUser) {
+//
+//        plantHeadService.updateWorker(id,dto);
+//        return ResponseEntity.ok(new ApiResponseDto<>(true, "worker,updated", null));
+//    }
+
+    @PutMapping("/worker/update/{id}")
+    public ResponseEntity<ApiResponseDto<Void>> updateWorker(
+            @PathVariable("id") Long workerId,
+            @ModelAttribute UpdateWorkerDto dto) {
+
+        try {
+            // Call service to update
+            plantHeadService.updateWorker(workerId, dto);
+
+            return ResponseEntity.ok(
+                    new ApiResponseDto<>(true, "Worker updated successfully", null)
+            );
+
+        } catch (Exception e) {
+            // Handle all exceptions gracefully
+            return ResponseEntity.badRequest().body(
+                    new ApiResponseDto<>(false, e.getMessage(), null)
+            );
+        }
+    }
+
+
+    // DELETE (soft)
+    @DeleteMapping("/worker/delete/{id}")
+    public ResponseEntity<ApiResponseDto<String>> delete(@PathVariable Long id) {
+        plantHeadService.deleteWorker(id);
+        return ResponseEntity.ok(new ApiResponseDto<>(true, "worker,deleted", null));
+    }
+
+    // GET ALL (unchanged — already returns data)
+
+    @GetMapping("/worker/getall")
+    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAll(
+            @ModelAttribute WorkerFilterSortDto filter) {
+
+        return ResponseEntity.ok(plantHeadService.getAllWorkers(filter));
+    }
 
 
 

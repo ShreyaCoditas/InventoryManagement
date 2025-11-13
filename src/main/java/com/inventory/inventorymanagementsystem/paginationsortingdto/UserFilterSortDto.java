@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,4 +20,7 @@ public class UserFilterSortDto extends BaseFilterSortDto {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate createdBefore;
+
+    private List<ActiveStatus> statuses; // instead of single ActiveStatus
+
 }
