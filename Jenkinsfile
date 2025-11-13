@@ -71,12 +71,30 @@ pipeline {
         stage('Deploy on Private Server') {
             steps {
                 sshagent(credentials: ['newnewnew']) {
-                    withCredentials([string(credentialsId: 'ECR_URI', variable: 'ECR_REPO')]) {
+                    withCredentials([
+                        string(credentialsId: 'ECR_URI', variable: 'ECR_REPO'),
+                        string(credentialsId: 'shreya_ios_java', variable: 'MY_SECRET1')
+                    ]) {
                         sh """
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
+                                echo 'Creating temporary env file'
+                                cat <<EOF > /tmp/inventory_env
+                                    PORT=${PORT}
+                                    DB_USER=${DB_USER}
+                                    DB_NAME=${DB_NAME}
+                                    DB_PASSWORD=${DB_PASSWORD}
+                                    DB_HOST=${DB_HOST}
+                                    JWT_SECRET=${JWT_SECRET}
+                                    SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+                                    SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+                                    API_KEY=${API_KEY}
+                                    EOF
+
+                                chmod 600 /tmp/inventory_env
+
                                 echo 'Login to ECR'
                                 aws ecr get-login-password --region ${AWS_REGION} \
-                                | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
+                                    | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
 
                                 echo 'Stopping old container'
                                 docker stop ${CONTAINER_NAME} || true
@@ -86,25 +104,21 @@ pipeline {
 
                                 echo 'Starting new container'
                                 docker run -d --name ${CONTAINER_NAME} --restart always -p 5000:5000 \
-                                    -e PORT=\${PORT} \
-                                    -e DB_USER=\${DB_USER} \
-                                    -e DB_NAME=\${DB_NAME} \
-                                    -e DB_PASSWORD=\${DB_PASSWORD} \
-                                    -e DB_HOST=\${DB_HOST} \
-                                    -e JWT_SECRET=\${JWT_SECRET} \
-                                    -e SUPER_ADMIN_EMAIL=\${SUPER_ADMIN_EMAIL} \
-                                    -e SUPER_ADMIN_PASSWORD=\${SUPER_ADMIN_PASSWORD} \
-                                    -e API_KEY=\${API_KEY} \
-                                    \$ECR_REPO/inventory_management_system_java:\${IMAGE_TAG}
+                                    --env-file /tmp/inventory_env \
+                                    \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
+
+                                echo 'Deleting temporary env file'
+                                rm -f /tmp/inventory_env
 
                                 echo 'Pruning old images'
                                 docker image prune -f
-                            "
-                        """
+                                "
+                            """
+                        }
                     }
                 }
             }
-        }
+
     }
 
     post {
