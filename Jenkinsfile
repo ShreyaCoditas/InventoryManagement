@@ -1,5 +1,5 @@
 pipeline {
-    agent {label "java-jenkins-agent"}
+    agent {label "java"}
 
     environment {
         AWS_REGION = "ap-south-1"
