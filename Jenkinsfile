@@ -9,11 +9,6 @@ pipeline {
 
     }
 
-    tools {
-        maven 'Maven-3.9'
-        jdk 'JDK-21'
-    }
-
     stages {
 
         stage('Checkout') {
@@ -37,8 +32,13 @@ pipeline {
 
         stage("SonarQube Analysis and Report Generation") {
             steps{
-                withSonarQubeEnv("SonarQube") {
-                    sh "mvn sonar:sonar"
+                withSonarQubeEnv("java-sonarqube-server") {
+                    sh '''
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey="shreya_inventory_management" \
+                            -Dsonar.projectName="shreya_inventory_management" \
+                            -Dsonar.login="sonarqube-java
+                    '''
                 }
             }
         }
