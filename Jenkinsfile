@@ -36,7 +36,6 @@ pipeline {
                         mvn sonar:sonar \
                             -Dsonar.projectKey="shreya_inventory_management" \
                             -Dsonar.projectName="shreya_inventory_management" \
-                            -Dsonar.login="sonarqube-java"
                     '''
                 }
             }
