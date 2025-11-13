@@ -78,7 +78,8 @@ pipeline {
                 sh """
                     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
                         echo 'Creating temporary env file'
-                        echo \"\$ENV_VARS\" > /tmp/inventory_env
+                        aws secretsmanager get-secret-value --secret-id shreya_ios_java --query SecretString --output text > /tmp/inventory.env
+
                         chmod 600 /tmp/inventory_env
 
                         echo 'Login to ECR'
@@ -97,7 +98,7 @@ pipeline {
                             \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
 
                         echo 'Deleting temporary env file'
-                        rm -f /tmp/inventory_env
+                        rm -f /tmp/inventory.env
 
                         echo 'Pruning old images'
                         docker image prune -f
