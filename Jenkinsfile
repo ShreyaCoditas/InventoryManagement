@@ -69,55 +69,44 @@ pipeline {
         }
 
         stage('Deploy on Private Server') {
-            steps {
-                sshagent(credentials: ['newnewnew']) {
-                    withCredentials([
-                        string(credentialsId: 'ECR_URI', variable: 'ECR_REPO'),
-                        string(credentialsId: 'shreya_ios_java', variable: 'MY_SECRET1')
-                    ]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
-                                echo 'Creating temporary env file'
-                                cat <<EOF > /tmp/inventory_env
-                                    PORT=${PORT}
-                                    DB_USER=${DB_USER}
-                                    DB_NAME=${DB_NAME}
-                                    DB_PASSWORD=${DB_PASSWORD}
-                                    DB_HOST=${DB_HOST}
-                                    JWT_SECRET=${JWT_SECRET}
-                                    SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
-                                    SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
-                                    API_KEY=${API_KEY}
-                                    EOF
+    steps {
+        sshagent(credentials: ['newnewnew']) {
+            withCredentials([
+                string(credentialsId: 'ECR_URI', variable: 'ECR_REPO'),
+                string(credentialsId: 'shreya_ios_java', variable: 'ENV_VARS')
+            ]) {
+                sh """
+                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "
+                        echo 'Creating temporary env file'
+                        echo \"\$ENV_VARS\" > /tmp/inventory_env
+                        chmod 600 /tmp/inventory_env
 
-                                chmod 600 /tmp/inventory_env
+                        echo 'Login to ECR'
+                        aws ecr get-login-password --region ${AWS_REGION} \
+                            | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
 
-                                echo 'Login to ECR'
-                                aws ecr get-login-password --region ${AWS_REGION} \
-                                    | docker login --username AWS --password-stdin \$ECR_REPO/inventory_management_system_java
+                        echo 'Stopping old container'
+                        docker stop ${CONTAINER_NAME} || true
 
-                                echo 'Stopping old container'
-                                docker stop ${CONTAINER_NAME} || true
+                        echo 'Removing old container'
+                        docker rm -f ${CONTAINER_NAME} || true
 
-                                echo 'Removing old container'
-                                docker rm -f ${CONTAINER_NAME} || true
+                        echo 'Starting new container'
+                        docker run -d --name ${CONTAINER_NAME} --restart always -p 5000:5000 \
+                            --env-file /tmp/inventory_env \
+                            \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
 
-                                echo 'Starting new container'
-                                docker run -d --name ${CONTAINER_NAME} --restart always -p 5000:5000 \
-                                    --env-file /tmp/inventory_env \
-                                    \$ECR_REPO/inventory_management_system_java:${IMAGE_TAG}
+                        echo 'Deleting temporary env file'
+                        rm -f /tmp/inventory_env
 
-                                echo 'Deleting temporary env file'
-                                rm -f /tmp/inventory_env
-
-                                echo 'Pruning old images'
-                                docker image prune -f
-                                "
-                            """
-                        }
-                    }
+                        echo 'Pruning old images'
+                        docker image prune -f
+                    "
+                """
                 }
             }
+        }
+    }
 
     }
 
