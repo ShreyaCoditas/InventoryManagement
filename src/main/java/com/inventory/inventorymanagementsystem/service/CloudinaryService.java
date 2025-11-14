@@ -24,6 +24,11 @@ public class CloudinaryService {
         }
     }
 
+    public Cloudinary getCloudinary() {
+        return this.cloudinary;
+    }
+
+
     public void delete(String publicId) {
         try {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());

@@ -1,17 +1,12 @@
 package com.inventory.inventorymanagementsystem.entity;
-
-
-
-
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.ExpensiveEnum;
 import com.inventory.inventorymanagementsystem.constants.IsPerishableEnum;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-
 @Entity
 @Table(name = "tool")
 @Getter
@@ -50,8 +45,8 @@ public class Tool {
     @Column(name = "threshold")
     private Integer threshold;
 
-    @Column(name = "available_quantity")
-    private Integer availableQuantity;
+//    @Column(name = "available_quantity")
+//    private Integer availableQuantity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "is_active",length = 20, nullable = false)
@@ -65,27 +60,31 @@ public class Tool {
 
     // Bidirectional - One Tool has Many StorageAreas
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<StorageArea> storageAreas;
+    private List<StorageArea> storageAreas = new ArrayList<>();
 
     // Bidirectional - One Tool has Many ToolStorageMappings
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolStorageMapping> toolStorageMappings;
+    private List<ToolStorageMapping> toolStorageMappings = new ArrayList<>();
+//
+//    // Bidirectional - One Tool has Many ToolRequests
+//    @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//    private List<ToolRequest> toolRequests = new ArrayList<>();
 
-    // Bidirectional - One Tool has Many ToolRequests
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolRequest> toolRequests;
+    private List<ToolRequestItem> toolRequestItems = new ArrayList<>();
+
 
     // Bidirectional - One Tool has Many ToolIssuances
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolIssuance> toolIssuances;
+    private List<ToolIssuance> toolIssuances = new ArrayList<>();
 
     // Bidirectional - One Tool has Many ToolExtensions
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolExtension> toolExtensions;
+    private List<ToolExtension> toolExtensions = new ArrayList<>();
 
     // Bidirectional - One Tool has Many ToolRestockRequests
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolRestockRequest> toolRestockRequests;
+    private List<ToolRestockRequest> toolRestockRequests = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

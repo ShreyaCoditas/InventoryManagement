@@ -54,21 +54,32 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
-
                                 .requestMatchers("/api/owner/planthead/factories").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/owner/worker/getall").hasRole("OWNER")
+                                .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner//{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
 
 
 
 
-                        .requestMatchers("api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
-                                .requestMatchers("api/owner/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("api/owner/{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("api/owner/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("api/profile/upload-image").hasRole("OWNER")
-                                .requestMatchers("/api/merchandise/**").hasRole("OWNER")
+
+                        .requestMatchers("/api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tool-request/worker").hasRole("WORKER")
+                                .requestMatchers("/api/owner/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/profile/upload-image").hasRole("OWNER")
+
                                 //.requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
+                                .requestMatchers("/api/tools/stock/add").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tool-request/worker").hasRole("WORKER")
 
+                                .requestMatchers("/api/owner/add/merchandise").hasAnyRole("OWNER","CENTRALOFFICER")
+                                .requestMatchers("/api/owner/update/merchandise/{id}").hasAnyRole("OWNER","CENTRALOFFICER")
+                                .requestMatchers("/api/owner/all/merchandise").hasAnyRole("OWNER","CENTRALOFFICER")
                                 .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/worker/**").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+
 
                                 .requestMatchers("/api/products/**").hasRole("OWNER")
                         .requestMatchers("/api/owner/**").hasRole("OWNER")

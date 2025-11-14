@@ -1,11 +1,10 @@
 package com.inventory.inventorymanagementsystem.entity;
 
-
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -36,7 +35,7 @@ public class ToolCategory {
 
     // Bidirectional - One ToolCategory has Many Tools
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Tool> tools;
+    private List<Tool> tools = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

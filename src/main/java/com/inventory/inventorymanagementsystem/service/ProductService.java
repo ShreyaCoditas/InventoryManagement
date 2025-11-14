@@ -16,23 +16,21 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 
 public class ProductService {
-
     @Autowired
-    private  ProductRepository productRepository;
+    private ProductRepository productRepository;
     @Autowired
     private ProductCategoryRepository categoryRepository;
     @Autowired
@@ -40,311 +38,68 @@ public class ProductService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-//    @Transactional
-//    public ApiResponseDto<ProductResponseDto> createOrUpdateProduct(CreateOrUpdateProductDto request, MultipartFile imageFile) {
-//        try {
-//            ProductCategory category = resolveCategory(request);
-//            Product product = (request.getId() != null)
-//                    ? productRepository.findById(request.getId())
-//                    .orElseThrow(() -> new RuntimeException("Product not found with ID: " + request.getId()))
-//                    : new Product();
-//
-//            product.setName(request.getName());
-//            product.setProductDescription(request.getProductDescription());
-//            product.setCategory(category);
-//            product.setPrice(request.getPrice());
-//            product.setRewardPoint(calculateRewardPoints(request.getPrice()));
-//            product.setIsActive(ActiveStatus.ACTIVE);
-//
-//            if (request.getId() == null)
-//                product.setCreatedAt(LocalDateTime.now());
-//            product.setUpdatedAt(LocalDateTime.now());
-//            // Upload image only if new file is given
-//            if (imageFile != null && !imageFile.isEmpty()) {
-//                String uploadedUrl = cloudinaryService.uploadFile(imageFile);
-//                product.setImage(uploadedUrl);
-//            } else if (request.getImage() != null && !request.getImage().isBlank()) {
-//                product.setImage(request.getImage());
-//            }
-//            Product saved = productRepository.save(product);
-//            ProductResponseDto response = new ProductResponseDto(
-//                    saved.getId(),
-//                    saved.getName(),
-//                    saved.getProductDescription(),
-//                    saved.getPrice(),
-//                    saved.getRewardPoint(),
-//                    saved.getCategory().getCategoryName(),
-//                    saved.getImage(),
-//                    saved.getIsActive().name()
-//            );
-//            String msg = (request.getId() == null)
-//                    ? "Product created successfully"
-//                    : "Product updated successfully";
-//            return new ApiResponseDto<>(true, msg, response);
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return new ApiResponseDto<>(false, "Something went wrong: " + e.getMessage(), null);
-//        }
-//    }
+    // CREATE
+    public ApiResponseDto<ProductResponseDto> createProduct(CreateProductDto dto) {
+        validateCategory(dto.getCategoryId(), dto.getNewCategoryName());
 
-//    @Transactional
-//    public ApiResponseDto<ProductResponseDto> createOrUpdateProduct(
-//            CreateOrUpdateProductDto dto, MultipartFile imageFile) {
-//
-//        try {
-//            ProductCategory category = resolveCategory(dto);
-//            Product product;
-//
-//            if (dto.getId() != null) {
-//                // UPDATE
-//                product = productRepository.findById(dto.getId())
-//                        .orElseThrow(() -> new RuntimeException("Product not found with ID: " + dto.getId()));
-//            } else {
-//                // CREATE
-//                product = new Product();
-//                product.setCreatedAt(LocalDateTime.now());
-//                product.setIsActive(ActiveStatus.ACTIVE);
-//            }
-//
-//            product.setName(dto.getName().trim());
-//            product.setProductDescription(dto.getProductDescription());
-//            product.setCategory(category);
-//            product.setPrice(dto.getPrice());
-//            product.setRewardPoint(calculateRewardPoints(dto.getPrice()));
-//            product.setUpdatedAt(LocalDateTime.now());
-//
-//            // HANDLE IMAGE
-//            if (imageFile != null && !imageFile.isEmpty()) {
-//                // Delete old image if exists
-//                if (product.getImage() != null && product.getId() != null) {
-//                    String publicId = cloudinaryService.extractPublicId(product.getImage());
-//                    cloudinaryService.delete(publicId);
-//                }
-//                String newUrl = cloudinaryService.uploadFile(imageFile);
-//                product.setImage(newUrl);
-//            }
-//            // Optional: allow setting image URL manually (e.g. from frontend)
-//            else if (dto.getImage() != null && !dto.getImage().isBlank()) {
-//                product.setImage(dto.getImage().trim());
-//            }
-//
-//            Product saved = productRepository.save(product);
-//
-//            ProductResponseDto response = ProductResponseDto.builder()
-//                    .id(saved.getId())
-//                    .name(saved.getName())
-//                    .productDescription(saved.getProductDescription())
-//                    .price(saved.getPrice())
-//                    .rewardPoint(saved.getRewardPoint())
-//                    .categoryName(saved.getCategory().getCategoryName())
-//                    .image(saved.getImage())
-//                    .isActive(saved.getIsActive().name())
-//                    .build();
-//
-//            String msg = dto.getId() == null ? "Product created" : "Product updated";
-//            return new ApiResponseDto<>(true, msg, response);
-//
-//        } catch (Exception e) {
-//            return new ApiResponseDto<>(false, "Error: " + e.getMessage(), null);
-//        }
-//    }
+        if (productRepository.existsByNameIgnoreCase(dto.getName().trim())) {
+            return new ApiResponseDto<>(false, "Product already exists", null);
+        }
 
-    public ApiResponseDto<ProductResponseDto> createOrUpdateProduct(
-            CreateOrUpdateProductDto dto, MultipartFile imageFile) {
+        String imageUrl = cloudinaryService.uploadFile(dto.getImageFile());
+        ProductCategory category = resolveCategory(dto.getCategoryId(), dto.getNewCategoryName());
 
-        try {
-            ProductCategory category = resolveCategory(dto);
-            Product product;
+        Product product = new Product();
+        product.setName(dto.getName().trim());
+        product.setProductDescription(dto.getProductDescription());
+        product.setPrice(dto.getPrice());
+        product.setRewardPoint(calculateRewardPoints(dto.getPrice()));
+        product.setCategory(category);
+        product.setImage(imageUrl);
+        product.setIsActive(ActiveStatus.ACTIVE);
+        product.setCreatedAt(LocalDateTime.now());
+        product.setUpdatedAt(LocalDateTime.now());
+        return saveAndRespond(product, "Product created");
+    }
 
-            boolean isCreate = dto.getId() == null;
-            if (isCreate) {
-                product = new Product();
-                product.setCreatedAt(LocalDateTime.now());
-                product.setIsActive(ActiveStatus.ACTIVE);
-            } else {
-                product = productRepository.findById(dto.getId())
-                        .orElseThrow(() -> new RuntimeException("Product not found with ID: " + dto.getId()));
+
+    // UPDATE
+    public ApiResponseDto<ProductResponseDto> updateProduct(Long id, UpdateProductDto dto) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            String name = dto.getName().trim();
+            if (!name.equalsIgnoreCase(product.getName()) && productRepository.existsByNameIgnoreCase(name)) {
+                return new ApiResponseDto<>(false, "Name already taken", null);
             }
+            product.setName(name);
+        }
 
-            // Only update fields that are provided
-            product.setName(dto.getName().trim());
+        if (dto.getProductDescription() != null && !dto.getProductDescription().isBlank()) {
             product.setProductDescription(dto.getProductDescription());
+        }
+
+        if (dto.getPrice() != null) {
             product.setPrice(dto.getPrice());
             product.setRewardPoint(calculateRewardPoints(dto.getPrice()));
-            product.setCategory(category);
-            product.setUpdatedAt(LocalDateTime.now());
-
-            // IMAGE LOGIC
-            if (imageFile != null && !imageFile.isEmpty()) {
-                // Delete old image
-                if (!isCreate && product.getImage() != null) {
-                    String publicId = cloudinaryService.extractPublicId(product.getImage());
-                    cloudinaryService.delete(publicId);
-                }
-                String url = cloudinaryService.uploadFile(imageFile);
-                product.setImage(url);
-            }
-            // Allow manual image URL (optional)
-            else if (dto.getImage() != null && !dto.getImage().isBlank()) {
-                product.setImage(dto.getImage().trim());
-            }
-            // If no image and it's create → required
-            else if (isCreate) {
-                return new ApiResponseDto<>(false, "Image is required for new product", null);
-            }
-
-            Product saved = productRepository.save(product);
-
-            ProductResponseDto response = ProductResponseDto.builder()
-                    .id(saved.getId())
-                    .name(saved.getName())
-                    .productDescription(saved.getProductDescription())
-                    .price(saved.getPrice())
-                    .rewardPoint(saved.getRewardPoint())
-                    .categoryName(saved.getCategory().getCategoryName())
-                    .image(saved.getImage())
-                    .isActive(saved.getIsActive().name())
-                    .build();
-
-            String msg = isCreate ? "Product created successfully" : "Product updated successfully";
-            return new ApiResponseDto<>(true, msg, response);
-
-        } catch (Exception e) {
-            return new ApiResponseDto<>(false, "Error: " + e.getMessage(), null);
         }
-    }
 
-
-    public ApiResponseDto<List<ProductInventoryResponseDto>> getAllProducts(ProductFilterSortDto filter, Long factoryId, Long productId
-    ) {
-        Specification<Product> spec = ProductSpecifications.withFilters(
-                filter.getCategoryName(),
-                filter.getAvailability(),
-                filter.getStatus(),
-                productId
-        );
-        Sort sort;
-        if ("quantity".equalsIgnoreCase(filter.getSortBy())) {
-            sort = Sort.by("id"); // will manually sort later
-        } else if ("price".equalsIgnoreCase(filter.getSortBy())) {
-            sort = "desc".equalsIgnoreCase(filter.getSortDirection())
-                    ? Sort.by("price").descending()
-                    : Sort.by("price").ascending();
-        } else {
-            sort = Sort.by("id");
+        if (dto.getCategoryId() != null || (dto.getNewCategoryName() != null && !dto.getNewCategoryName().isBlank())) {
+            validateCategory(dto.getCategoryId(), dto.getNewCategoryName());
+            product.setCategory(resolveCategory(dto.getCategoryId(), dto.getNewCategoryName()));
         }
-        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
-        List<Product> products = productPage.getContent();
-        List<ProductInventoryResponseDto> result = products.stream().map(p -> {
-            Integer totalQty = (factoryId != null)
-                    ? factoryInventoryRepository.findTotalQuantityByProductIdAndFactoryId(p.getId(), factoryId)
-                    : factoryInventoryRepository.findTotalQuantityByProductId(p.getId());
 
-            int totalQuantity = totalQty != null ? totalQty : 0;
-            String stockStatus = totalQuantity > 0 ? "InStock" : "OutOfStock";
+        if (dto.getImage() != null && !dto.getImage().isEmpty()) {
+            if (product.getImage() != null) {
+                cloudinaryService.delete(cloudinaryService.extractPublicId(product.getImage()));
+            }
+            product.setImage(cloudinaryService.uploadFile(dto.getImage()));
+        }
 
-            return new ProductInventoryResponseDto(
-                    p.getId(),
-                    p.getName(),
-                    p.getProductDescription(),
-                    p.getPrice(),
-                    p.getRewardPoint(),
-                    p.getCategory().getCategoryName(),
-                    p.getImage(),
-                    p.getIsActive().name(),
-                    totalQuantity,
-                    stockStatus
-            );
-        }).toList();
-
-        Map<String, Object> pagination = PaginationUtil.build(productPage);
-        return new ApiResponseDto<>(true, "Products fetched successfully", result, pagination);
+        product.setUpdatedAt(LocalDateTime.now());
+        return saveAndRespond(product, "Product updated");
     }
-
-
-//    public ApiResponseDto<List<ProductInventoryResponseDto>> getAllProducts(
-//            ProductFilterSortDto filter, Long factoryId) {
-//        Sort sort;
-//        if ("quantity".equalsIgnoreCase(filter.getSortBy())) {
-//            // Manual sort later for quantity
-//            sort = Sort.by("id");
-//        } else if ("price".equalsIgnoreCase(filter.getSortBy())) {
-//            sort = "desc".equalsIgnoreCase(filter.getSortDirection())
-//                    ? Sort.by("price").descending()
-//                    : Sort.by("price").ascending();
-//        } else {
-//            sort = Sort.by("id"); // Default sort
-//        }
-//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-//        Page<Product> productPage = productRepository.findAll(pageable);
-//
-//        // Step 2: Filter active products
-//        List<Product> products = productPage.getContent().stream()
-//                .filter(p -> p.getIsActive() == ActiveStatus.ACTIVE)
-//                .toList();
-//
-//        // Step 3: Filter by category name
-//        if (filter.getCategoryName() != null && !filter.getCategoryName().isBlank()) {
-//            products = products.stream()
-//                    .filter(p -> p.getCategory() != null &&
-//                            p.getCategory().getCategoryName().equalsIgnoreCase(filter.getCategoryName()))
-//                    .toList();
-//        }
-//
-//        // Step 4: Build response with inventory info
-//        List<ProductInventoryResponseDto> result = products.stream().map(p -> {
-//            Integer totalQty;
-//            if (factoryId != null) {
-//                totalQty = factoryInventoryRepository.findTotalQuantityByProductIdAndFactoryId(p.getId(), factoryId);
-//            } else {
-//                totalQty = factoryInventoryRepository.findTotalQuantityByProductId(p.getId());
-//            }
-//
-//            int totalQuantity = (totalQty == null) ? 0 : totalQty;
-//            String stockStatus = totalQuantity > 0 ? "InStock" : "OutOfStock";
-//
-//            return new ProductInventoryResponseDto(
-//                    p.getId(),
-//                    p.getName(),
-//                    p.getProductDescription(),
-//                    p.getPrice(),
-//                    p.getRewardPoint(),
-//                    p.getCategory().getCategoryName(),
-//                    p.getImage(),
-//                    p.getIsActive().name(),
-//                    totalQuantity,
-//                    stockStatus
-//            );
-//        }).toList();
-//
-//        // Step 5: Filter by availability (InStock / OutOfStock)
-//        if (filter.getAvailability() != null && !filter.getAvailability().isBlank()) {
-//            if (filter.getAvailability().equalsIgnoreCase("InStock")) {
-//                result = result.stream().filter(r -> r.getTotalQuantity() > 0).toList();
-//            } else if (filter.getAvailability().equalsIgnoreCase("OutOfStock")) {
-//                result = result.stream().filter(r -> r.getTotalQuantity() == 0).toList();
-//            }
-//        }
-//
-//        // Step 6: Manual sorting by quantity if requested
-//        if ("quantity".equalsIgnoreCase(filter.getSortBy())) {
-//            if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
-//                result = result.stream()
-//                        .sorted(Comparator.comparing(ProductInventoryResponseDto::getTotalQuantity).reversed())
-//                        .toList();
-//            } else {
-//                result = result.stream()
-//                        .sorted(Comparator.comparing(ProductInventoryResponseDto::getTotalQuantity))
-//                        .toList();
-//            }
-//        }
-//
-//        // Step 7: Pagination meta info
-//        Map<String, Object> pagination = PaginationUtil.build(productPage);
-//        return new ApiResponseDto<>(true, "Products fetched successfully", result, pagination);
-//    }
 
 
     @Transactional
@@ -356,14 +111,90 @@ public class ProductService {
         return new ApiResponseDto<>(true, "Product deleted successfully", null);
     }
 
-
-    public List<String> getActiveCategoryNames() {
-        return categoryRepository.findAll()
+    @Transactional
+    public ApiResponseDto<List<ProductResponseDto>> getAllProducts(int page, int size, String sortBy, String sortDir, List<String> categoryNames, String availability) {
+        if (sortBy == null || sortBy.isBlank()) {
+            sortBy = "id";
+        }
+        Sort sort = Sort.unsorted();
+        if (!"quantity".equalsIgnoreCase(sortBy)) {
+            sort = "desc".equalsIgnoreCase(sortDir)
+                    ? Sort.by(sortBy).descending()
+                    : Sort.by(sortBy).ascending();
+        }
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Product> productPage = productRepository.findByIsActive(ActiveStatus.ACTIVE, pageable);
+        List<Product> products = new ArrayList<>(productPage.getContent());
+        Map<Long, Integer> productQuantities = factoryInventoryRepository.findProductQuantities()
                 .stream()
-                .map(ProductCategory::getCategoryName)
-                .sorted()  // Alphabetical order
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).intValue()
+                ));
+        if (categoryNames != null && !categoryNames.isEmpty()) {
+            List<String> normalized = categoryNames.stream()
+                    .flatMap(names -> Arrays.stream(names.split(","))) // e.g. Furniture,Electronics
+                    .map(String::trim)
+                    .map(String::toLowerCase)
+                    .toList();
+            products = products.stream()
+                    .filter(p -> p.getCategory() != null &&
+                            normalized.contains(p.getCategory().getCategoryName().toLowerCase()))
+                    .toList();
+        }
+
+        List<ProductResponseDto> dtos = products.stream()
+                .map(p -> {
+                    int quantity = productQuantities.getOrDefault(p.getId(), 0);
+                    String stockStatus = quantity == 0 ? "OUTOFSTOCK" : "INSTOCK";
+
+                    return ProductResponseDto.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .categoryName(p.getCategory() != null ? p.getCategory().getCategoryName() : null)
+                            .price(p.getPrice())
+                            .rewardPoint(p.getRewardPoint())
+                            .quantity(quantity)
+                            .productDescription(p.getProductDescription())
+                            .image(p.getImage())
+                            .isActive(p.getIsActive().name())
+                            .StockStatus(stockStatus)
+                            .build();
+                })
                 .toList();
+
+        if (availability != null) {
+            if ("InStock".equalsIgnoreCase(availability)) {
+                dtos = dtos.stream()
+                        .filter(p -> p.getQuantity() > 0)
+                        .toList();
+            } else if ("OutOfStock".equalsIgnoreCase(availability)) {
+                dtos = dtos.stream()
+                        .filter(p -> p.getQuantity() == 0)
+                        .toList();
+            }
+        }
+
+        if ("price".equalsIgnoreCase(sortBy)) {
+            dtos = dtos.stream()
+                    .sorted("desc".equalsIgnoreCase(sortDir)
+                            ? Comparator.comparing(ProductResponseDto::getPrice).reversed()
+                            : Comparator.comparing(ProductResponseDto::getPrice))
+                    .toList();
+        } else if ("quantity".equalsIgnoreCase(sortBy)) {
+            dtos = dtos.stream()
+                    .sorted("desc".equalsIgnoreCase(sortDir)
+                            ? Comparator.comparing(ProductResponseDto::getQuantity).reversed()
+                            : Comparator.comparing(ProductResponseDto::getQuantity))
+                    .toList();
+        }
+
+        Map<String, Object> pagination = PaginationUtil.build(productPage);
+        return new ApiResponseDto<>(true, "Products fetched successfully", dtos, pagination);
     }
+
+
+
 
     @Transactional
     public ApiResponseDto<CategoryResponseDto> updateCategory(Long id, CreateOrUpdateCategoryDto request) {
@@ -394,8 +225,68 @@ public class ProductService {
         return new ApiResponseDto<>(true, "Category and associated products deleted successfully", null);
     }
 
+    public ApiResponseDto<List<ProductCategoryResponseDto>> getAllProductCategories() {
+        List<ProductCategory> categories = categoryRepository.findAll();
+
+        List<ProductCategoryResponseDto> categoryDtos = categories.stream()
+                .map(cat -> ProductCategoryResponseDto.builder()
+                        .categoryId(cat.getId())
+                        .categoryName(cat.getCategoryName())
+                        .build())
+                .toList();
+
+        return new ApiResponseDto<>(true, "Product categories fetched successfully", categoryDtos);
+    }
 
 
+
+
+    // REUSABLE
+    private void validateCategory(Long categoryId, String newCategoryName) {
+        boolean hasId = categoryId != null && categoryId > 0;
+        boolean hasName = newCategoryName != null && !newCategoryName.isBlank();
+        if (!hasId && !hasName) {
+            throw new RuntimeException("Either categoryId or newCategoryName is required");
+        }
+        if (hasId && hasName) {
+            throw new RuntimeException("Only one of categoryId or newCategoryName should be provided");
+        }
+    }
+
+    private ProductCategory resolveCategory(Long categoryId, String newCategoryName) {
+        if (categoryId != null) {
+            return categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Invalid category ID"));
+        }
+        return categoryRepository.findByCategoryNameIgnoreCase(newCategoryName.trim())
+                .orElseGet(() -> {
+                    ProductCategory cat = new ProductCategory();
+                    cat.setCategoryName(newCategoryName.trim());
+                    cat.setCategoryDescription("Auto-created");
+                    cat.setCreatedAt(LocalDateTime.now());
+                    cat.setUpdatedAt(LocalDateTime.now());
+                    return categoryRepository.save(cat);
+                });
+    }
+
+    private ApiResponseDto<ProductResponseDto> saveAndRespond(Product p, String msg) {
+        Product saved = productRepository.save(p);
+        return new ApiResponseDto<>(true, msg, toResponseDto(saved));
+    }
+
+    private ProductResponseDto toResponseDto(Product p) {
+        return ProductResponseDto.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .productDescription(p.getProductDescription())
+                .price(p.getPrice())
+                .rewardPoint(p.getRewardPoint())
+                .categoryName(p.getCategory().getCategoryName())
+                .image(p.getImage())
+                .isActive(p.getIsActive().name())
+//                .StockStatus(p.get)
+                .build();
+    }
 
     private int calculateRewardPoints(BigDecimal price) {
         return price.multiply(BigDecimal.valueOf(0.001))
@@ -403,23 +294,15 @@ public class ProductService {
                 .intValue();
     }
 
-    private ProductCategory resolveCategory(CreateOrUpdateProductDto request) {
-        if (request.getCategoryId() != null) {
-            return categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Invalid category ID: " + request.getCategoryId()));
-        }
-        if (request.getNewCategoryName() != null && !request.getNewCategoryName().isBlank()) {
-            return categoryRepository.findByCategoryNameIgnoreCase(request.getNewCategoryName())
-                    .orElseGet(() -> {
-                        ProductCategory newCat = new ProductCategory();
-                        newCat.setCategoryName(request.getNewCategoryName().trim());
-                        newCat.setCategoryDescription("Auto-created category");
-                        newCat.setCreatedAt(LocalDateTime.now());
-                        newCat.setUpdatedAt(LocalDateTime.now());
-                        return categoryRepository.save(newCat);
-                    });
-        }
-        throw new RuntimeException("Either categoryId or newCategoryName must be provided");
+
+
+
+
+
+
+
+
+
     }
 
-}
+

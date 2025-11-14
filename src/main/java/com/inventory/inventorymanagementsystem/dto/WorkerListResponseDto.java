@@ -9,8 +9,10 @@ public class WorkerListResponseDto {
     private Long workerId;
     private String workerName;
     private String factoryName;
+    private Long factoryId;
     private String location;
     private String bayArea;
     private String status;
+    private String profileImage;
 }
 

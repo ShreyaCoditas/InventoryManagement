@@ -1,42 +1,57 @@
 package com.inventory.inventorymanagementsystem.specifications;
 
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
+import com.inventory.inventorymanagementsystem.entity.FactoryInventoryStock;
 import com.inventory.inventorymanagementsystem.entity.Product;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
+
+import java.util.List;
 
 public class ProductSpecifications {
 
     public static Specification<Product> withFilters(
-            String categoryName,
+            List<String> categoryNames,
             String availability,
             String status,
+            Long factoryId,
             Long productId
     ) {
         return (root, query, cb) -> {
             var predicates = cb.conjunction();
 
-            // ✅ Filter by isActive
+            // Status
             if (status != null && !status.isBlank()) {
                 try {
                     predicates.getExpressions().add(
                             cb.equal(root.get("isActive"), ActiveStatus.valueOf(status.toUpperCase()))
                     );
-                } catch (IllegalArgumentException ignored) {
-                }
+                } catch (IllegalArgumentException ignored) {}
             } else {
                 predicates.getExpressions().add(cb.equal(root.get("isActive"), ActiveStatus.ACTIVE));
             }
 
-            // ✅ Filter by category name
-            if (categoryName != null && !categoryName.isBlank()) {
+            // Category filter
+            if (categoryNames != null && !categoryNames.isEmpty()) {
                 var join = root.join("category", JoinType.LEFT);
+                var lowerNames = categoryNames.stream().map(String::toLowerCase).toList();
                 predicates.getExpressions().add(
-                        cb.like(cb.lower(join.get("categoryName")), "%" + categoryName.toLowerCase() + "%")
+                        cb.lower(join.get("categoryName")).in(lowerNames)
                 );
             }
 
-            // ✅ Filter by productId
+            // ✅ Factory filter (join inventory stock)
+            if (factoryId != null) {
+                Join<Product, FactoryInventoryStock> stockJoin =
+                        root.join("factoryInventoryStocks", JoinType.LEFT);
+                predicates.getExpressions().add(
+                        cb.equal(stockJoin.get("factory").get("id"), factoryId)
+                );
+                query.distinct(true);
+            }
+
+            // ✅ Product ID filter
             if (productId != null) {
                 predicates.getExpressions().add(cb.equal(root.get("id"), productId));
             }

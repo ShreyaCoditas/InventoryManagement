@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,15 +25,17 @@ public class GlobalExceptionHandler {
     // Handles validation errors from @Valid annotated DTOs.
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponseDto<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponseDto<Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errors.put(error.getField(), error.getDefaultMessage())
         );
 
-        ApiResponseDto<Map<String, String>> response =
-                new ApiResponseDto(false, "Validation failed", errors);
+        String errorMessage = "Validation failed: " + errors.entrySet().stream()
+                .map(e -> e.getKey() + " " + e.getValue())
+                .collect(Collectors.joining(", "));
+
+        ApiResponseDto<Object> response = new ApiResponseDto<>(false, errorMessage, null);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
@@ -45,7 +48,7 @@ public class GlobalExceptionHandler {
             errors.put("error",ex.getMessage());
             errors.put("timestamp",LocalDateTime.now());
             errors.put("status",HttpStatus.BAD_REQUEST.value());
-            ApiResponseDto<Map<String,Object>> response = new ApiResponseDto<>(false, ex.getMessage(),errors);
+            ApiResponseDto<Map<String,Object>> response = new ApiResponseDto<>(false, ex.getMessage(),null);
 
             // For user-related/business logic errors, return 400 (not 500)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

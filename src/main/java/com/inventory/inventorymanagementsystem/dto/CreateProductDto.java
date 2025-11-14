@@ -1,14 +1,16 @@
 package com.inventory.inventorymanagementsystem.dto;
 
+import com.inventory.inventorymanagementsystem.validation.ValidImage;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
 @Data
-public class CreateOrUpdateProductDto {
+public class CreateProductDto {
 
-    private Long id; // For Edit — null for new
+    private Long id; // null → create, not null → update
 
     @NotBlank(message = "Product name is required")
     private String name;
@@ -16,15 +18,15 @@ public class CreateOrUpdateProductDto {
     @NotBlank(message = "Product description is required")
     private String productDescription;
 
-    private Long categoryId; // Optional if new category is added
+    private Long categoryId;
 
-    private String newCategoryName; // Optional if user adds new one
+    private String newCategoryName;
 
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be greater than 0")
     private BigDecimal price;
 
-
-    private String image;
+    @NotNull(message="Image is required")
+    @ValidImage
+    private MultipartFile imageFile; // Fixed: MultipartFile
 }
-

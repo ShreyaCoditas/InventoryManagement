@@ -24,63 +24,37 @@ public class ProductController {
     private CloudinaryService cloudinaryService;
 
 
-//    @PostMapping(value = "/createorupdate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
-//            @ModelAttribute CreateOrUpdateProductDto request,
-//            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
-//        ApiResponseDto<ProductResponseDto> response = productService.createOrUpdateProduct(request, imageFile);
-//        return ResponseEntity.ok(response);
-//    }
 
-//    @PostMapping(value = "/createorupdate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
-//            @Valid @ModelAttribute CreateOrUpdateProductDto request,
-//            BindingResult result,
-//            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
-//
-//        if (result.hasErrors()) {
-//            String msg = result.getFieldErrors().get(0).getDefaultMessage();
-//            return ResponseEntity.badRequest().body(new ApiResponseDto<>(false, msg, null));
-//        }
-//
-//        ApiResponseDto<ProductResponseDto> response = productService.createOrUpdateProduct(request, imageFile);
-//        return ResponseEntity.ok(response);
-//    }
-
-    @PostMapping(value = "/createorupdate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createOrUpdateProduct(
-            @Valid @ModelAttribute CreateOrUpdateProductDto dto,
-            BindingResult result,
-            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
-
+    // CREATE
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponseDto<ProductResponseDto>> create(@Valid @ModelAttribute CreateProductDto dto, BindingResult result) {
         if (result.hasErrors()) {
             String msg = result.getFieldErrors().get(0).getDefaultMessage();
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponseDto<>(false, msg, null));
+            return ResponseEntity.badRequest().body(new ApiResponseDto<>(false, msg, null));
         }
-
-        ApiResponseDto<ProductResponseDto> response = productService.createOrUpdateProduct(dto, imageFile);
-        return ResponseEntity.ok(response);
-    }
-//    @GetMapping("/allproducts")
-//    public ResponseEntity<ApiResponseDto<List<ProductInventoryResponseDto>>> getAllProducts(
-//            @RequestParam(required = false) Long factoryId,   // Optional factory ID
-//            @ModelAttribute ProductFilterSortDto filter) {
-//        ApiResponseDto<List<ProductInventoryResponseDto>> response =
-//                productService.getAllProducts(filter, factoryId);
-//        return ResponseEntity.ok(response);
-//    }
-
-    @GetMapping("/allproducts")
-    public ResponseEntity<ApiResponseDto<List<ProductInventoryResponseDto>>> getAllProducts(
-            @ModelAttribute ProductFilterSortDto filter,
-            @RequestParam(required = false) Long factoryId,
-            @RequestParam(required = false) Long productId
-    ) {
-        ApiResponseDto<List<ProductInventoryResponseDto>> response = productService.getAllProducts(filter, factoryId, productId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(productService.createProduct(dto));
     }
 
+    // UPDATE
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponseDto<ProductResponseDto>> update(@PathVariable Long id, @ModelAttribute UpdateProductDto dto) {
+        return ResponseEntity.ok(productService.updateProduct(id, dto));
+    }
+
+    @GetMapping("/getAllProducts")
+    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) List<String> categoryNames,
+            @RequestParam(required = false) String availability) {
+
+        ApiResponseDto<List<ProductResponseDto>> response =
+                productService.getAllProducts(page, size, sortBy, sortDir, categoryNames, availability);
+
+        return ResponseEntity.ok(response);
+    }
 
 
 
@@ -90,11 +64,9 @@ public class ProductController {
     }
 
     @GetMapping("/categories/all")
-    public ResponseEntity<ApiResponseDto<List<String>>> getAllCategoryNames() {
-        List<String> categoryNames = productService.getActiveCategoryNames();
-        return ResponseEntity.ok(
-                new ApiResponseDto<>(true, "Category names fetched", categoryNames)
-        );
+    public ResponseEntity<ApiResponseDto<List<ProductCategoryResponseDto>>> getCategoriesForProducts() {
+        ApiResponseDto<List<ProductCategoryResponseDto>> response = productService.getAllProductCategories();
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/categories/{id}/update")

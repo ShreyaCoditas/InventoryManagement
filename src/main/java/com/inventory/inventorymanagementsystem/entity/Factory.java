@@ -27,7 +27,7 @@ public class Factory {
     @Column(name = "factory_code", unique = true, length = 20)
     private String factoryCode;
 
-    @Column(name = "name", length = 100)
+    @Column(name = "name",unique = true, length = 100)
     private String name;
 
     @Column(name = "city", length = 100)

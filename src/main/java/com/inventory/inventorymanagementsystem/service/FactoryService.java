@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 
@@ -46,18 +45,43 @@ public class FactoryService {
     @Autowired
     private ObjectMapper objectMapper;
 
+//    @Transactional
+//    public FactoryResponseDto createFactory(CreateFactoryRequestDto request, User owner) {
+//        Factory factory = objectMapper.convertValue(request, Factory.class);
+//        factory.setIsActive(ActiveStatus.ACTIVE);
+//        factory.setCreatedAt(LocalDateTime.now());
+//        if (request.getPlantHeadId() != null) {
+//            userRepository.findById(request.getPlantHeadId())
+//                    .ifPresent(factory::setPlantHead);
+//        }
+//        Factory savedFactory = factoryRepository.save(factory);
+//        return new FactoryResponseDto(savedFactory.getId());
+//    }
+
     @Transactional
     public FactoryResponseDto createFactory(CreateFactoryRequestDto request, User owner) {
+        if (factoryRepository.existsByNameIgnoreCase(request.getName().trim())) {
+            throw new RuntimeException("Factory with this name already exists");
+        }
         Factory factory = objectMapper.convertValue(request, Factory.class);
         factory.setIsActive(ActiveStatus.ACTIVE);
         factory.setCreatedAt(LocalDateTime.now());
         if (request.getPlantHeadId() != null) {
-            userRepository.findById(request.getPlantHeadId())
-                    .ifPresent(factory::setPlantHead);
+            User plantHead = userRepository.findById(request.getPlantHeadId())
+                    .orElseThrow(() -> new RuntimeException("Plant Head not found"));
+            if (plantHead.getIsActive() != ActiveStatus.ACTIVE) {
+                throw new RuntimeException("Cannot assign inactive Plant Head");
+            }
+            if (!plantHead.getRole().getRoleName().equals(RoleName.PLANTHEAD)) {
+                throw new RuntimeException("User is not a Plant Head");
+            }
+            factory.setPlantHead(plantHead);
         }
         Factory savedFactory = factoryRepository.save(factory);
         return new FactoryResponseDto(savedFactory.getId());
     }
+
+
 
     @Transactional
     public FactoryResponseDto updateFactory(UpdateFactoryRequestDto request, User owner) {
@@ -101,48 +125,48 @@ public class FactoryService {
         return new ApiResponseDto<>(true, "Factories fetched successfully", result);
     }
 
-
+//
 //    @Transactional
 //    public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-//        Specification<Factory> spec = FactorySpecifications.withFilters(
-//                filter.getLocation(),
-//                filter.getPlantHeadName(),
-//                filter.getStatus()
-//        );
+//        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
 //        Sort sort = Sort.by(filter.getSortBy());
 //        if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
 //            sort = sort.descending();
 //        }
+//
 //        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
 //        Page<Factory> factoryPage = factoryRepository.findAll(spec, pageable);
-//        List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
 //
+//        List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
 //            String plantHeadName = factory.getPlantHead() != null
 //                    ? factory.getPlantHead().getUsername()
 //                    : "Unassigned";
 //
-//            // Total products (from production table)
+//            // Fetch Chief Supervisor
+//            List<String> chiefs = userFactoryMappingRepository.findChiefSupervisorsByFactoryId(factory.getId());
+//            String chiefSupervisorName = chiefs.isEmpty() ? "Unassigned" : String.join(", ", chiefs);
+//
+//            //  Other metrics
 //            int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
-//
-//            // Total workers (from user-factory mapping)
 //            int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
-//
-//            // Total tools (from inventory stock or tools table)
 //            int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
+//
 //            return new FactoryDto(
 //                    factory.getId(),
 //                    factory.getName(),
 //                    factory.getCity(),
 //                    plantHeadName,
-//                    chiefsupervisor,
 //                    totalProducts,
 //                    totalWorkers,
 //                    totalTools,
-//                    factory.getIsActive().name()
-//            );
+//                    factory.getIsActive().name(),
+//                    chiefSupervisorName,
+//                    factory.getAddress(),
+//                    factory.getPlantHead() != null ? factory.getPlantHead().getId() : null
+//                    );
 //        }).toList();
-//        Map<String, Object> pagination = PaginationUtil.build(factoryPage);
 //
+//        Map<String, Object> pagination = PaginationUtil.build(factoryPage);
 //        return new ApiResponseDto<>(
 //                true,
 //                "Factories fetched successfully",
@@ -151,29 +175,42 @@ public class FactoryService {
 //        );
 //    }
 
-
     @Transactional
     public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
 
+        // 🔥 Build Specification with multi-location filtering
+        Specification<Factory> spec = FactorySpecifications.withFilters(
+                filter.getLocation(),          // Updated
+                filter.getPlantHeadName(),
+                filter.getStatus()
+        );
+
+        // 🔥 Sorting (ASC / DESC)
         Sort sort = Sort.by(filter.getSortBy());
         if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
             sort = sort.descending();
         }
 
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+
         Page<Factory> factoryPage = factoryRepository.findAll(spec, pageable);
 
         List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
+
+            // 🟦 Plant Head
             String plantHeadName = factory.getPlantHead() != null
                     ? factory.getPlantHead().getUsername()
                     : "Unassigned";
 
-            // Fetch Chief Supervisor
+            Long plantHeadId = factory.getPlantHead() != null
+                    ? factory.getPlantHead().getId()
+                    : null;
+
+            // 🟦 Chief Supervisors
             List<String> chiefs = userFactoryMappingRepository.findChiefSupervisorsByFactoryId(factory.getId());
             String chiefSupervisorName = chiefs.isEmpty() ? "Unassigned" : String.join(", ", chiefs);
 
-            //  Other metrics
+            // 🟦 Other Metrics
             int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
             int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
             int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
@@ -187,8 +224,11 @@ public class FactoryService {
                     totalWorkers,
                     totalTools,
                     factory.getIsActive().name(),
-                    chiefSupervisorName
+                    chiefSupervisorName,
+                    factory.getAddress(),
+                    plantHeadId
             );
+
         }).toList();
 
         Map<String, Object> pagination = PaginationUtil.build(factoryPage);
@@ -200,5 +240,6 @@ public class FactoryService {
                 pagination
         );
     }
+
 
 }
