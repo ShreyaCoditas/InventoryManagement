@@ -5,6 +5,7 @@ import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.UserFilterSortDto;
 import com.inventory.inventorymanagementsystem.repository.RoleRepository;
+import com.inventory.inventorymanagementsystem.repository.UserFactoryMappingRepository;
 import com.inventory.inventorymanagementsystem.repository.UserRepository;
 import com.inventory.inventorymanagementsystem.security.JWTUtil;
 import com.inventory.inventorymanagementsystem.specifications.UserSpecifications;
@@ -49,6 +50,9 @@ public class UserService {
     @Autowired
     private AuthenticationManager authManager;
 
+    @Autowired
+    private UserFactoryMappingRepository userFactoryMappingRepository;
+
     private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
 
     public User register(RegisterDto userDto){
@@ -88,71 +92,155 @@ public class UserService {
         }
     }
 
-    @Transactional
-    public ApiResponseDto<List<UserListDto>> getAllUsersByRole(String roleType, UserFilterSortDto filter) {
+//    @Transactional
+//    public ApiResponseDto<List<UserListDto>> getAllUsersByRole(String roleType, UserFilterSortDto filter) {
+//
+//        Specification<User> spec = Specification.allOf(
+//                UserSpecifications.withFilters(
+//                        filter.getName(),
+//                        filter.getStatus(),
+//                        filter.getStatuses(),   // ✅ new field added
+//                        filter.getCreatedAfter(),
+//                        filter.getCreatedBefore()
+//                )
+//        );
+//
+//        Role role;
+//        Page<User> userPage;
+//
+//        // Pagination & Sorting setup
+//        Sort sort = Sort.by(filter.getSortBy());
+//        if ("desc".equalsIgnoreCase(filter.getSortDirection())) sort = sort.descending();
+//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+//
+//        // Role-based logic
+//        switch (roleType.toUpperCase()) {
+//            case "PLANTHEAD" -> {
+//                role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
+//                        .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
+//                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//                userPage = userRepository.findAll(spec, pageable);
+//            }
+//
+//            case "CENTRALOFFICER" -> {
+//                role = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
+//                        .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
+//                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//                userPage = userRepository.findAll(spec, pageable);
+//            }
+//
+//            case "CHIEFSUPERVISOR" -> {
+//                role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
+//                        .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
+//                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//                userPage = userRepository.findAll(spec, pageable);
+//            }
+//
+//            default -> throw new IllegalArgumentException("Invalid role type: " + roleType);
+//        }
+//
+//        //  Convert to DTOs
+//        List<UserListDto> users = userPage.getContent().stream()
+//                .map(u -> new UserListDto(
+//                        u.getId(),
+//                        u.getUsername(),
+//                        u.getEmail(),
+//                        u.getRole().getRoleName().name(),
+//                        u.getIsActive(),
+//                        u.getCreatedAt()
+//                ))
+//                .toList();
+//
+//        //  Attach pagination map from utility
+//        Map<String, Object> pagination = PaginationUtil.build(userPage);
+//
+////  Return response
+//        return new ApiResponseDto<>(true, "Users fetched successfully", users, pagination);
+//
+//    }
+//to-do
+//@Transactional
+//public ApiResponseDto<List<UserListDto>> getAllUsersByRole(String roleType, UserFilterSortDto filter) {
+//
+//    Specification<User> spec = Specification.allOf(
+//            UserSpecifications.withFilters(
+//                    filter.getName(),
+//                    filter.getStatus(),
+//                    filter.getStatuses(),
+//                    filter.getCreatedAfter(),
+//                    filter.getCreatedBefore()
+//            )
+//    );
+//
+//    Page<User> userPage;
+//    Role role;
+//
+//    // 🟦 Pagination & Sorting
+//    Sort sort = Sort.by(filter.getSortBy());
+//    if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
+//        sort = sort.descending();
+//    }
+//    Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+//
+//    // 🟦 Role-based filtering using SWITCH
+//    switch (roleType.toUpperCase()) {
+//
+//        case "PLANTHEAD" -> {
+//            role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
+//                    .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
+//            spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//            userPage = userRepository.findAll(spec, pageable);
+//        }
+//
+//        case "CENTRALOFFICER" -> {
+//            role = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
+//                    .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
+//            spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//            userPage = userRepository.findAll(spec, pageable);
+//        }
+//
+//        case "CHIEFSUPERVISOR" -> {
+//            role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
+//                    .orElseThrow(() -> new RuntimeException("Role not found: CHIEFSUPERVISOR"));
+//            spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+//            userPage = userRepository.findAll(spec, pageable);
+//        }
+//
+//        default -> throw new IllegalArgumentException("Invalid role type: " + roleType);
+//    }
+//
+//    // 🟦 BUILD RESPONSE WITH FACTORY NAMES FOR PLANTHEAD / CS ONLY
+//    List<UserListDto> users = userPage.getContent().stream().map(u -> {
+//
+//        List<String> factoryNames = null;
+//        RoleName roleName = u.getRole().getRoleName();
+//
+//        // Include factory list ONLY for PlantHead & ChiefSupervisor
+//        if (roleName == RoleName.PLANTHEAD || roleName == RoleName.CHIEFSUPERVISOR) {
+//
+//            factoryNames = userFactoryMappingRepository.findByUserId(u.getId())
+//                    .stream()
+//                    .map(m -> m.getFactory().getName())
+//                    .toList();
+//        }
+//
+//        return new UserListDto(
+//                u.getId(),
+//                u.getUsername(),
+//                u.getEmail(),
+//                roleName.name(),
+//                u.getIsActive(),
+//                u.getCreatedAt(),
+//                factoryNames // null for Central Officer
+//        );
+//
+//    }).toList();
+//
+//    // 🟦 Pagination Map
+//    Map<String, Object> pagination = PaginationUtil.build(userPage);
+//
+//    return new ApiResponseDto<>(true, "Users fetched successfully", users, pagination);
+//}
 
-        Specification<User> spec = Specification.allOf(
-                UserSpecifications.withFilters(
-                        filter.getName(),
-                        filter.getStatus(),
-                        filter.getStatuses(),   // ✅ new field added
-                        filter.getCreatedAfter(),
-                        filter.getCreatedBefore()
-                )
-        );
-
-        Role role;
-        Page<User> userPage;
-
-        // Pagination & Sorting setup
-        Sort sort = Sort.by(filter.getSortBy());
-        if ("desc".equalsIgnoreCase(filter.getSortDirection())) sort = sort.descending();
-        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-
-        // Role-based logic
-        switch (roleType.toUpperCase()) {
-            case "PLANTHEAD" -> {
-                role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
-                        .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
-                userPage = userRepository.findAll(spec, pageable);
-            }
-
-            case "CENTRALOFFICER" -> {
-                role = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
-                        .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
-                userPage = userRepository.findAll(spec, pageable);
-            }
-
-            case "CHIEFSUPERVISOR" -> {
-                role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
-                        .orElseThrow(() -> new RuntimeException("Role not found: CENTRALOFFICER"));
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
-                userPage = userRepository.findAll(spec, pageable);
-            }
-
-            default -> throw new IllegalArgumentException("Invalid role type: " + roleType);
-        }
-
-        //  Convert to DTOs
-        List<UserListDto> users = userPage.getContent().stream()
-                .map(u -> new UserListDto(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getEmail(),
-                        u.getRole().getRoleName().name(),
-                        u.getIsActive(),
-                        u.getCreatedAt()
-                ))
-                .toList();
-
-        //  Attach pagination map from utility
-        Map<String, Object> pagination = PaginationUtil.build(userPage);
-
-//  Return response
-        return new ApiResponseDto<>(true, "Users fetched successfully", users, pagination);
-
-    }
 
 }

@@ -1,19 +1,24 @@
 package com.inventory.inventorymanagementsystem.dto;
 
+import com.inventory.inventorymanagementsystem.constants.ToolRequestStatus;
 import lombok.*;
-import java.time.LocalDateTime;
 
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ToolRequestResponseDto {
     private Long requestId;
-    private String toolName;
-    private String imageUrl;
-    private int requestedQuantity;
-    private String isPerishable;
-    private String isExpensive;
-    private String status; // Pending, Assigned, Overdue, Seized
-    private LocalDateTime requestDate;
-    private LocalDateTime assignedDate;
-    private LocalDateTime dueDate;
+    private Long workerId;
+    private String workerName;
+    private String workerBay;
+    private String status;
+    private String rejectionReason;
+    private LocalDateTime createdAt;
+
+    private List<ToolRequestItemDetailsDto> items;
 }

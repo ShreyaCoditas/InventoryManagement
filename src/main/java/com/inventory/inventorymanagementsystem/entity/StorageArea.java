@@ -32,16 +32,16 @@ public class StorageArea {
     private Tool tool;
 
     @Column(name = "row_number")
-    private Integer rowNumber;
+    private String rowNumber;
 
     @Column(name = "column_number")
-    private Integer columnNumber;
+    private String columnNumber;
 
     @Column(name = "stack_level")
-    private Integer stackLevel;
+    private String stackLevel;
 
     @Column(name = "bucket_number")
-    private Integer bucketNumber;
+    private String bucketNumber;
 
     @Column(name = "current_quantity")
     private Integer currentQuantity;

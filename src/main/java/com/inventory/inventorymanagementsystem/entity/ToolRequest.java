@@ -23,16 +23,24 @@ public class ToolRequest {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tool_id")
-    private Tool tool;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "tool_id")
+//    private Tool tool;
+
+//    @ManyToMany
+//    @JoinTable(
+//            name = "tool_request_tools",
+//            joinColumns = @JoinColumn(name = "tool_request_id"),
+//            inverseJoinColumns = @JoinColumn(name = "tool_id")
+//    )
+//    private List<Tool> tools = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "worker_id")
     private User worker;
 
-    @Column(name = "request_quantity")
-    private Integer requestQuantity;
+//    @Column(name = "request_quantity")
+//    private Integer requestQuantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
@@ -54,6 +62,10 @@ public class ToolRequest {
     // Bidirectional - One ToolRequest has Many ToolIssuances
     @OneToMany(mappedBy = "toolRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ToolIssuance> toolIssuances = new ArrayList<>();
+
+    @OneToMany(mappedBy = "toolRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ToolRequestItem> items = new ArrayList<>();
+
 
     @PrePersist
     protected void onCreate() {

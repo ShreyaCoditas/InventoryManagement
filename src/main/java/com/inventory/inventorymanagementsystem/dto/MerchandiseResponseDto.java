@@ -9,13 +9,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class MerchandiseResponseDto {
+//    private Long id;
+//    private String name;
+//    private String image;
+//    private Integer rewardPoints;
+//    private Integer quantity;
+//    private String status;
+//    private LocalDateTime createdAt;
+//    private LocalDateTime updatedAt;
     private Long id;
     private String name;
-    private String image;
-    private Integer rewardPoints;
-    private Integer quantity;
-    private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Long requiredPoints;
+    private Long availableQuantity;
+    private String imageUrl;
 }
 
