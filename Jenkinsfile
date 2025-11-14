@@ -72,9 +72,7 @@ pipeline {
     steps {
         sshagent(credentials: ['newnewnew']) {
             withCredentials([
-                string(credentialsId: 'ECR_URI', variable: 'ECR_REPO'),
-                string(credentialsId: 'shreya_ios_java', variable: 'ENV_VARS')
-            ]) {
+                string(credentialsId: 'ECR_URI', variable: 'ECR_REPO')]) {
                 sh """
                     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
                         bash /home/ubuntu/docker_run.sh $ECR_REPO ${IMAGE_TAG} > /home/ubuntu/logs.txt
