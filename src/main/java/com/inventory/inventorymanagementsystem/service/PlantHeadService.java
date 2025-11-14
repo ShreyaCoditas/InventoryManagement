@@ -66,10 +66,12 @@ public class PlantHeadService {
     @Transactional
     public PlantHeadResponseDto createPlantHead(CreatePlantHeadRequestDto request, User owner) {
         String generatedPassword = "default123";
+
+        // Ensure PLANTHEAD role exists
         Role plantHeadRole = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                 .orElseThrow(() -> new IllegalStateException("PLANTHEAD role not seeded"));
 
-        // Either reuse or create Plant Head
+        // Either reuse existing user or create new Plant Head user
         User plantHead = userRepository.findByEmailIgnoreCase(request.getEmail())
                 .orElseGet(() -> {
                     User newUser = new User();
@@ -79,18 +81,25 @@ public class PlantHeadService {
                     newUser.setRole(plantHeadRole);
                     newUser.setIsActive(ActiveStatus.ACTIVE);
                     newUser.setCreatedAt(LocalDateTime.now());
+                    newUser.setUpdatedAt(LocalDateTime.now());
                     return userRepository.save(newUser);
                 });
 
+        // Validate role of the found/created user
         if (plantHead.getRole() == null ||
-                !plantHead.getRole().getRoleName().equals(RoleName.PLANTHEAD)) {
+                !RoleName.PLANTHEAD.equals(plantHead.getRole().getRoleName())) {
             throw new RuntimeException("User exists but is not a Plant Head");
         }
 
-        // Assign to factory...
+        // If factoryId provided, assign Plant Head to that factory (only if factory is ACTIVE)
         if (request.getFactoryId() != null) {
             Factory factory = factoryRepository.findById(request.getFactoryId())
                     .orElseThrow(() -> new RuntimeException("Factory not found"));
+
+            // NEW: Prevent assignment to inactive factory
+            if (factory.getIsActive() != ActiveStatus.ACTIVE) {
+                throw new RuntimeException("Cannot assign Plant Head to an inactive factory");
+            }
 
             // Assign Plant Head to Factory if not already assigned
             if (!Objects.equals(factory.getPlantHead(), plantHead)) {
@@ -98,7 +107,7 @@ public class PlantHeadService {
                 factoryRepository.save(factory);
             }
 
-            // ✅ Added: Create user-factory mapping (important for factory-based access)
+            // Create a mapping entry if not present
             boolean alreadyMapped = userFactoryMappingRepository
                     .existsByUserIdAndFactoryIdAndAssignedRole(
                             plantHead.getId(), factory.getId(), RoleName.PLANTHEAD);
@@ -112,8 +121,8 @@ public class PlantHeadService {
             }
         }
 
-        // Send email only for newly created Plant Heads
-        if (plantHead.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
+        // Send credentials email when user was newly created (rough heuristic: created within last minute)
+        if (plantHead.getCreatedAt() != null && plantHead.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
             try {
                 emailService.sendCredentialsEmail(
                         plantHead.getEmail(),
@@ -128,6 +137,7 @@ public class PlantHeadService {
 
         return new PlantHeadResponseDto(plantHead.getId());
     }
+
 
 
 
@@ -146,7 +156,7 @@ public class PlantHeadService {
     public ApiResponseDto<List<PlantHeadDto>> getAllPlantHeads() {
         Role role = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                 .orElseThrow(() -> new RuntimeException("Role not found: PLANTHEAD"));
-        List<User> plantHeads = userRepository.findByRole(role);
+        List<User> plantHeads = userRepository.findByRoleAndIsActive(role, ActiveStatus.ACTIVE);
         List<PlantHeadDto> result = plantHeads.stream()
                 .map(u -> new PlantHeadDto(u.getId(), u.getUsername(), u.getEmail(), u.getIsActive().name()))
                 .toList();
@@ -175,64 +185,9 @@ public class PlantHeadService {
         return new ApiResponseDto<>(true, "Available bays fetched successfully", availableBays);
     }
 
-//    @Transactional
-//    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(WorkerFilterSortDto filter, Long factoryId) {
-//        List<UserFactoryMapping> mappings;
-//
-//        if (factoryId != null) {
-//            mappings = userFactoryMappingRepository.findByFactoryIdAndAssignedRole(factoryId, RoleName.WORKER);
-//        } else {
-//            mappings = userFactoryMappingRepository.findByAssignedRole(RoleName.WORKER);
-//        }
-//
-//        Stream<UserFactoryMapping> stream = mappings.stream();
-//
-//        if (filter.getLocation() != null && !filter.getLocation().isBlank()) {
-//            stream = stream.filter(m -> m.getFactory().getCity().equalsIgnoreCase(filter.getLocation()));
-//        }
-//
-//        if (filter.getStatus() != null && !filter.getStatus().isBlank()) {
-//            stream = stream.filter(m -> m.getUser().getIsActive().name().equalsIgnoreCase(filter.getStatus()));
-//        }
-//
-//        List<UserFactoryMapping> filteredMappings = stream.toList();
-//        List<WorkerListResponseDto> workers = filteredMappings.stream()
-//                .map(mapping -> {
-//                    User worker = mapping.getUser();
-//                    Factory factory = mapping.getFactory();
-//
-//                    Bay bay = null;
-//                    if (mapping.getBayId() != null) {
-//                        bay = bayRepository.findById(Long.parseLong(mapping.getBayId())).orElse(null);
-//                    }
-//
-//                    return WorkerListResponseDto.builder()
-//                            .workerId(worker.getId())
-//                            .workerName(worker.getUsername())
-//                            .factoryName(factory.getName())
-//                            .location(factory.getCity())
-//                            .bayArea(bay != null ? bay.getBayName() : "-")
-//                            .status(worker.getIsActive().name())
-//                            .build();
-//                })
-//                .toList();
-//        if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
-//            workers = workers.stream()
-//                    .sorted(Comparator.comparing(WorkerListResponseDto::getWorkerName).reversed())
-//                    .toList();
-//        } else {
-//            workers = workers.stream()
-//                    .sorted(Comparator.comparing(WorkerListResponseDto::getWorkerName))
-//                    .toList();
-//        }
-//
-//        return new ApiResponseDto<>(true, "Workers fetched successfully", workers);
-//    }
-//
 
-
-           public ApiResponseDto<List<FactoryListDto>> getUnassignedFactories() {
-            List<FactoryListDto> factories = factoryRepository.findByPlantHeadIsNull().stream()
+    public ApiResponseDto<List<FactoryListDto>> getUnassignedFactories() {
+        List<FactoryListDto> factories = factoryRepository.findByPlantHeadIsNull().stream()
                     .map(f -> new FactoryListDto(f.getId(), f.getName()))
                     .toList();
             return new ApiResponseDto<>(true, "Unassigned factories fetched successfully", factories);
@@ -280,40 +235,11 @@ public class PlantHeadService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-
         userRepository.save(worker);
-
         createUserFactoryMapping(worker, factory, bay);
-
         sendCredentialsAsync(worker);
     }
 
-//    // UPDATE
-//    public void updateWorker(Long id, UpdateWorkerDto dto, UserPrincipal currentUser) {
-//        User worker = userRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Worker not found"));
-//
-//        validateIsWorker(worker);
-//
-//        Long factoryId = resolveFactoryId(dto.getFactoryId(), currentUser);
-//        Factory factory = factoryRepository.findById(factoryId)
-//                .orElseThrow(() -> new RuntimeException("Factory not found"));
-//
-//        Bay bay = bayRepository.findById(dto.getBayId())
-//                .orElseThrow(() -> new RuntimeException("Bay not found"));
-//
-//        validateBayInFactory(bay, factoryId);
-//        if (dto.getBayId() != null && !dto.getBayId().equals(getCurrentBayId(worker))) {
-//            validateBayCapacity(dto.getBayId());
-//        }
-//        validateEmailUniqueness(dto.getEmail(), worker.getId());
-//
-//        updateWorkerFields(worker, dto);
-//        updateUserFactoryMapping(worker, factory, bay);
-//
-//        worker.setUpdatedAt(LocalDateTime.now());
-//        userRepository.save(worker);
-//    }
 
     // DELETE (soft)
     public void deleteWorker(Long id) {

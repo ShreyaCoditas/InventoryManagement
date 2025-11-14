@@ -17,5 +17,6 @@ public class ProductResponseDto {
     private String categoryName;
     private String image; // URL, not MultipartFile
     private String isActive;
+    private String StockStatus;
     private Integer quantity;
 }

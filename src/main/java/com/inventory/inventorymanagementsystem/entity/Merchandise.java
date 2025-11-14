@@ -17,34 +17,63 @@ import java.time.LocalDateTime;
 @Builder
 public class Merchandise {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
-
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "id")
+//    private Long id;
+//
+//    @Column(name = "name", length = 100)
+//    private String name;
+//
+//    @Column(name = "image", columnDefinition = "TEXT")
+//    private String image;
+//
+//    @Column(name = "reward_points")
+//    private Integer rewardPoints;
+//
+//    @Column(nullable = false)
+//    private Integer quantity;
+//
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "is_active", nullable = false)
+//    private ActiveStatus isActive = ActiveStatus.ACTIVE;
+//
+//    @Column(name = "created_at", nullable = false, updatable = false)
+//    private LocalDateTime createdAt;
+//
+//    @Column(name = "updated_at")
+//    private LocalDateTime updatedAt;
+//
+//    @PrePersist
+//    protected void onCreate() {
+//        createdAt = LocalDateTime.now();
+//        updatedAt = LocalDateTime.now();
+//    }
+//
+//    @PreUpdate
+//    protected void onUpdate() {
+//        updatedAt = LocalDateTime.now();
+//    }
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
     @Column(name = "name", length = 100)
     private String name;
 
     @Column(name = "image", columnDefinition = "TEXT")
     private String image;
-
-    @Column(name = "reward_points")
-    private Integer rewardPoints;
-
     @Column(nullable = false)
-    private Integer quantity;
-
+    private Long quantity;
+    @Column(name = "reward_points")
+    private Long rewardPoints;
     @Enumerated(EnumType.STRING)
     @Column(name = "is_active", nullable = false)
     private ActiveStatus isActive = ActiveStatus.ACTIVE;
-
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
+   private LocalDateTime createdAt;
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
+  private LocalDateTime updatedAt;
+        @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
@@ -54,4 +83,7 @@ public class Merchandise {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+
+
 }

@@ -1,10 +1,13 @@
 package com.inventory.inventorymanagementsystem.controller;
 
 import com.inventory.inventorymanagementsystem.dto.*;
+import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.service.ToolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -87,4 +90,15 @@ public class ToolController {
     public ResponseEntity<ApiResponseDto<String>> delete(@PathVariable Long id) {
         return ResponseEntity.ok(toolService.deleteCategory(id));
     }
+
+
+
+    @PostMapping("/stock/add")
+    public ResponseEntity<ApiResponseDto<String>> addToolStock(
+            @RequestBody AddToolStockDto dto,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        ApiResponseDto<String> response = toolService.addToolStock(dto, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
 }

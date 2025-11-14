@@ -146,6 +146,8 @@ public class ProductService {
         List<ProductResponseDto> dtos = products.stream()
                 .map(p -> {
                     int quantity = productQuantities.getOrDefault(p.getId(), 0);
+                    String stockStatus = quantity == 0 ? "OUTOFSTOCK" : "INSTOCK";
+
                     return ProductResponseDto.builder()
                             .id(p.getId())
                             .name(p.getName())
@@ -156,6 +158,7 @@ public class ProductService {
                             .productDescription(p.getProductDescription())
                             .image(p.getImage())
                             .isActive(p.getIsActive().name())
+                            .StockStatus(stockStatus)
                             .build();
                 })
                 .toList();
@@ -281,6 +284,7 @@ public class ProductService {
                 .categoryName(p.getCategory().getCategoryName())
                 .image(p.getImage())
                 .isActive(p.getIsActive().name())
+//                .StockStatus(p.get)
                 .build();
     }
 

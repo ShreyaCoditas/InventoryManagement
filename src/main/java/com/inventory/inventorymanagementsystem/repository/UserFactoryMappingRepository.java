@@ -1,6 +1,8 @@
 package com.inventory.inventorymanagementsystem.repository;
 
 import com.inventory.inventorymanagementsystem.constants.RoleName;
+import com.inventory.inventorymanagementsystem.entity.Factory;
+import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.entity.UserFactoryMapping;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +19,12 @@ public interface UserFactoryMappingRepository extends JpaRepository<UserFactoryM
     @Modifying
     @Query("DELETE FROM UserFactoryMapping ufm WHERE ufm.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
+
+    Optional<UserFactoryMapping> findByUser(User user);
+
+    List<UserFactoryMapping> findAllByUser(User user);
+
+
 
 
     //  Get all supervisors (or other users) by role
@@ -53,4 +61,13 @@ public interface UserFactoryMappingRepository extends JpaRepository<UserFactoryM
 
 
     boolean existsByUserIdAndFactoryIdAndAssignedRole(Long id, Long id1, RoleName roleName);
+
+    @Query("SELECT ufm.factory FROM UserFactoryMapping ufm WHERE ufm.user.id = :userId")
+    Optional<Factory> findFactoryByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT ufm.user FROM UserFactoryMapping ufm " +
+            "WHERE ufm.factory.id = :factoryId " +
+            "AND ufm.assignedRole = com.inventory.inventorymanagementsystem.constants.RoleName.CHIEFSUPERVISOR")
+    Optional<User> findChiefSupervisorByFactoryId(@Param("factoryId") Long factoryId);
+
 }

@@ -14,4 +14,6 @@ public interface FactoryRepository extends JpaRepository<Factory,Long>, JpaSpeci
     List<Factory> findByPlantHeadIsNull();
 
     List<Factory> findByPlantHeadId(Long plantHeadId);
+
+    boolean existsByNameIgnoreCase(String name);
 }

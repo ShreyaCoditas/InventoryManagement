@@ -6,46 +6,54 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FactorySpecifications {
-    public static Specification<Factory> withFilters(String location, String plantHeadName, String status) {
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new java.util.ArrayList<>();
 
-            //  Filter by city/location
-            if (location != null && !location.isBlank()) {
-                predicates.add(
-                        cb.like(cb.lower(root.get("city")), "%" + location.trim().toLowerCase() + "%")
-                );
+    public static Specification<Factory> withFilters(
+            List<String> locations,
+            String plantHeadName,
+            String status
+    ) {
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            /* 🔥 MULTIPLE LOCATION FILTER (Supports Pune,Mumbai,Hyd) */
+            if (locations != null && !locations.isEmpty()) {
+
+                List<String> normalized = locations.stream()
+                        .flatMap(loc -> List.of(loc.split(",")).stream())  // Split Pune,Mumbai
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .toList();
+
+                predicates.add(cb.lower(root.get("city")).in(normalized));
             }
 
-            // Filter by Plant Head name (exact match)
+            /* 🔥 FILTER BY PLANT HEAD NAME */
             if (plantHeadName != null && !plantHeadName.isBlank()) {
                 var join = root.join("plantHead", JoinType.INNER);
+
                 predicates.add(
-                        cb.equal(cb.lower(join.get("username")), plantHeadName.trim().toLowerCase())
+                        cb.equal(
+                                cb.lower(join.get("username")),
+                                plantHeadName.trim().toLowerCase()
+                        )
                 );
             }
 
-            // ✅ Filter by Active/Inactive status
+            /* 🔥 FILTER BY STATUS (ACTIVE / INACTIVE) */
             if (status != null && !status.isBlank()) {
                 try {
-                    ActiveStatus activeStatus = ActiveStatus.valueOf(status.trim().toUpperCase());
-                    predicates.add(cb.equal(root.get("isActive"), activeStatus));
+                    ActiveStatus st = ActiveStatus.valueOf(status.trim().toUpperCase());
+                    predicates.add(cb.equal(root.get("isActive"), st));
                 } catch (IllegalArgumentException ignored) {
-                    // ignore invalid status
                 }
             }
 
-            // ✅ Combine all filters with AND
-            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
-
-
-
-
-
-
 }

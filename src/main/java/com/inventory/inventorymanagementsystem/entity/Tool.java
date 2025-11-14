@@ -45,8 +45,8 @@ public class Tool {
     @Column(name = "threshold")
     private Integer threshold;
 
-    @Column(name = "available_quantity")
-    private Integer availableQuantity;
+//    @Column(name = "available_quantity")
+//    private Integer availableQuantity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "is_active",length = 20, nullable = false)
@@ -65,10 +65,14 @@ public class Tool {
     // Bidirectional - One Tool has Many ToolStorageMappings
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ToolStorageMapping> toolStorageMappings = new ArrayList<>();
+//
+//    // Bidirectional - One Tool has Many ToolRequests
+//    @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//    private List<ToolRequest> toolRequests = new ArrayList<>();
 
-    // Bidirectional - One Tool has Many ToolRequests
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ToolRequest> toolRequests = new ArrayList<>();
+    private List<ToolRequestItem> toolRequestItems = new ArrayList<>();
+
 
     // Bidirectional - One Tool has Many ToolIssuances
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

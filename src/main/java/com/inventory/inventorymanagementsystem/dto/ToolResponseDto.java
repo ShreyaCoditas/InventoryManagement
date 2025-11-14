@@ -17,6 +17,7 @@ public class ToolResponseDto {
     private String isExpensive;
     private Integer threshold;
     private Integer availableQuantity;
+    private Long totalQuantity;
     private String status;
     private String stockStatus;
     private LocalDateTime createdAt;
