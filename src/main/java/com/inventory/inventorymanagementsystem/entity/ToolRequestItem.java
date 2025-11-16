@@ -29,4 +29,13 @@ public class ToolRequestItem {
     // Quantity for THIS tool
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
+
+    @Builder.Default
+    @Column(name = "status")
+    private String status = "PENDING";
+
+    @Builder.Default
+    @Column(name = "rejection_reason")
+    private String rejectionReason = null;
+
 }

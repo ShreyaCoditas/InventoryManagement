@@ -22,7 +22,14 @@ public interface UserFactoryMappingRepository extends JpaRepository<UserFactoryM
 
     Optional<UserFactoryMapping> findByUser(User user);
 
+
     List<UserFactoryMapping> findAllByUser(User user);
+    @Query("SELECT f.name FROM UserFactoryMapping ufm " +
+            "JOIN ufm.factory f " +
+            "WHERE ufm.user.id = :userId")
+    List<String> findFactoryNamesByUserId(@Param("userId") Long userId);
+
+
 
 
 

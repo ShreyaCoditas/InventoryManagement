@@ -1,17 +1,14 @@
+// ToolRequestItemDetailsDto.java
 package com.inventory.inventorymanagementsystem.dto;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter
 public class ToolRequestItemDetailsDto {
     private Long toolId;
     private String toolName;
     private Integer quantity;
-    private String imageUrl;
-    private String isExpensive;
+    private Boolean isExpensive;
+    private String categoryName;
 }
-

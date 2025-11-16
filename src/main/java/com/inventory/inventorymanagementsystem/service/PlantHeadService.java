@@ -394,17 +394,49 @@ public class PlantHeadService {
         userRepository.save(worker);
     }
 
+//final
+//    @Transactional
+//    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(WorkerFilterSortDto filter) {
+//
+//        // ✅ Normalize sortBy input
+//        String sortBy = filter.getSortBy() != null ? filter.getSortBy().toLowerCase() : "name";
+//
+//        // Map friendly names to entity field names
+//        sortBy = switch (sortBy) {
+//            case "workerName", "username" -> "username";  // adjust this to match actual entity field
+//            case "emailid", "email" -> "email";
+//            default -> sortBy;
+//        };
+//
+//        Sort sort = "desc".equalsIgnoreCase(filter.getSortDirection())
+//                ? Sort.by(sortBy).descending()
+//                : Sort.by(sortBy).ascending();
+//
+//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+//
+//        Specification<User> spec = Specification.allOf(
+//                WorkerSpecifications.isWorker(),
+//                WorkerSpecifications.hasStatus(filter.getStatus()),
+//                WorkerSpecifications.hasLocation(filter.getLocation())
+//        );
+//
+//        Page<User> page = userRepository.findAll(spec, pageable);
+//
+//        List<WorkerListResponseDto> dtos = page.getContent().stream()
+//                .map(this::toListDto)
+//                .toList();
+//
+//        return new ApiResponseDto<>(true, "Workers fetched successfully", dtos, PaginationUtil.build(page));
+//    }
 
     @Transactional
-    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(WorkerFilterSortDto filter) {
+    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(Long factoryId, WorkerFilterSortDto filter) {
 
-        // ✅ Normalize sortBy input
-        String sortBy = filter.getSortBy() != null ? filter.getSortBy().toLowerCase() : "name";
+        String sortBy = filter.getSortBy() != null ? filter.getSortBy().toLowerCase() : "username";
 
-        // Map friendly names to entity field names
         sortBy = switch (sortBy) {
-            case "workerName", "username" -> "username";  // adjust this to match actual entity field
-            case "emailid", "email" -> "email";
+            case "workername", "username" -> "username";
+            case "email", "emailid" -> "email";
             default -> sortBy;
         };
 
@@ -417,7 +449,8 @@ public class PlantHeadService {
         Specification<User> spec = Specification.allOf(
                 WorkerSpecifications.isWorker(),
                 WorkerSpecifications.hasStatus(filter.getStatus()),
-                WorkerSpecifications.hasLocation(filter.getLocation())
+                WorkerSpecifications.hasLocation(filter.getLocation()),
+                WorkerSpecifications.belongsToFactory(factoryId)   // ⭐ NEW FILTER
         );
 
         Page<User> page = userRepository.findAll(spec, pageable);
@@ -428,6 +461,7 @@ public class PlantHeadService {
 
         return new ApiResponseDto<>(true, "Workers fetched successfully", dtos, PaginationUtil.build(page));
     }
+
 
 
 

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -15,4 +16,5 @@ public class UserListDto {
     private String role;
     private ActiveStatus isActive;
     private LocalDateTime createdAt;
+    private List<String> factoryNames;
 }

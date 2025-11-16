@@ -300,6 +300,7 @@ public class ToolService {
                 .totalQuantity(total.longValue())  // ✅ total quantity added
                 .status(t.getIsActive() != null ? t.getIsActive().name() : null)
                 .stockStatus(stockStatus)
+                .returnWindowDays(30)
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
                 .build();

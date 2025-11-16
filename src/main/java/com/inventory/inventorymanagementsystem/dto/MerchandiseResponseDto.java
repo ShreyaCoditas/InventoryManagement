@@ -22,5 +22,6 @@ public class MerchandiseResponseDto {
     private Long requiredPoints;
     private Long availableQuantity;
     private String imageUrl;
+    private String stockStatus;
 }
 

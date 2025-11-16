@@ -181,17 +181,17 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
-//to-do
-//    @GetMapping("/users")
-//    public ResponseEntity<ApiResponseDto<List<UserListDto>>> getAllUsers(
-//            @RequestParam(required = false) String role,
-//            @ModelAttribute UserFilterSortDto filter) {
-//
-//        // If no role is passed, fetch both PlantHead and CentralOfficer
-//        ApiResponseDto<List<UserListDto>> response = userService.getAllUsersByRole(role, filter);
-//
-//        return ResponseEntity.ok(response);
-//    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponseDto<List<UserListDto>>> getAllUsers(
+            @RequestParam(required = false) String role,
+            @ModelAttribute UserFilterSortDto filter) {
+
+        // If no role is passed, fetch both PlantHead and CentralOfficer
+        ApiResponseDto<List<UserListDto>> response = userService.getAllUsersByRole(role, filter);
+
+        return ResponseEntity.ok(response);
+    }
 
 //    @PostMapping("/create/workers")
 //    public ResponseEntity<ApiResponseDto<WorkerResponseDto>> createWorker(
@@ -218,7 +218,7 @@ public class UserController {
 //    }
 
     // CREATE
-    @PostMapping(value = "/worker/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/create/worker", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponseDto<String>> create(
             @Valid @ModelAttribute CreateWorkerRequestDto dto,
             BindingResult result,
@@ -276,12 +276,21 @@ public class UserController {
 
     // GET ALL (unchanged — already returns data)
 
-    @GetMapping("/worker/getall")
-    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAll(
-            @ModelAttribute WorkerFilterSortDto filter) {
+//    @GetMapping("/worker/getall")
+//    public ResponseEntity<ApiResponseDto<List<WorkerListResponseDto>>> getAll(
+//            @ModelAttribute WorkerFilterSortDto filter) {
+//
+//        return ResponseEntity.ok(plantHeadService.getAllWorkers(filter));
+//    }
 
-        return ResponseEntity.ok(plantHeadService.getAllWorkers(filter));
+    @GetMapping("/worker/getall")
+    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(
+            @RequestParam Long factoryId,
+            WorkerFilterSortDto filter
+    ) {
+        return plantHeadService.getAllWorkers(factoryId, filter);
     }
+
 
     @PostMapping(value = "/add/merchandise", consumes = {"multipart/form-data"})
 

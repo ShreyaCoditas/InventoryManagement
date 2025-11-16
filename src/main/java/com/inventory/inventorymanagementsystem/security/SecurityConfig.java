@@ -54,8 +54,31 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
-                                .requestMatchers("/api/owner/planthead/factories").hasRole("PLANTHEAD")
-                                .requestMatchers("/api/owner/worker/getall").hasRole("OWNER")
+                                .requestMatchers("/api/owner/create-factory").hasRole("OWNER")
+                                .requestMatchers("/api/owner/factories").hasRole("OWNER")
+                                .requestMatchers("/api/owner/factory/update").hasRole("OWNER")
+                                .requestMatchers("/api/owner/factories/{id}/delete").hasRole("OWNER")
+                                .requestMatchers("/api/owner/unassigned").hasRole("OWNER")
+
+                                .requestMatchers("/api/owner/create-planthead").hasRole("OWNER")
+                                .requestMatchers("/api/owner/plantheads").hasRole("OWNER")
+                                .requestMatchers("/api/owner/plantheads/{id}/delete").hasRole("OWNER")
+
+                                .requestMatchers("/api/owner/add-central-officer").hasRole("OWNER")
+                                .requestMatchers("/api/owner/update/{id}").hasRole("OWNER")
+                                .requestMatchers("/api/owner/soft-delete/central-officer/{id}").hasRole("OWNER")
+
+                                .requestMatchers("api/owner/create/chiefsupervisor").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/allsupervisor").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/delete/supervisor/{supervisorId}").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/planthead/factories").hasRole("OWNER")
+                                .requestMatchers("/api/owner/factories/{factoryId}/supervisors").hasRole("OWNER")
+                                .requestMatchers("/api/owner/users").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasRole("PLANTHEAD")
+
+                                .requestMatchers("/api/owner/create/worker").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/worker/getall").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/worker/update/{id}").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner//{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
 
@@ -63,27 +86,24 @@ public class SecurityConfig {
 
 
 
-                        .requestMatchers("/api/owner/create/chiefsupervisor").hasRole("PLANTHEAD")
-                                .requestMatchers("/api/tool-request/worker").hasRole("WORKER")
-                                .requestMatchers("/api/owner/create/workers").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("/api/owner/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("/api/profile/upload-image").hasRole("OWNER")
 
-                                //.requestMatchers("/api/tools/allworkers").hasAnyRole("OWNER","PLANTHEAD","CHEIFSUPERVISOR","WORKER")
-                                .requestMatchers("/api/tools/stock/add").hasRole("PLANTHEAD")
                                 .requestMatchers("/api/tool-request/worker").hasRole("WORKER")
+                                .requestMatchers("/api/tool-request/handle").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/profile/upload-image").hasRole("OWNER")
+                                .requestMatchers("/api/tools/stock/add").hasRole("PLANTHEAD")
+
+
 
                                 .requestMatchers("/api/owner/add/merchandise").hasAnyRole("OWNER","CENTRALOFFICER")
                                 .requestMatchers("/api/owner/update/merchandise/{id}").hasAnyRole("OWNER","CENTRALOFFICER")
                                 .requestMatchers("/api/owner/all/merchandise").hasAnyRole("OWNER","CENTRALOFFICER")
+                                .requestMatchers("/api/owner/delete/merchandise/{id}").hasAnyRole("OWNER","CENTRALOFFICER")
                                 .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
-                                .requestMatchers("/api/owner/worker/**").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+
 
 
                                 .requestMatchers("/api/products/**").hasRole("OWNER")
-                        .requestMatchers("/api/owner/**").hasRole("OWNER")
-                        //.requestMatchers("/api/owner/**").hasAnyAuthority("OWNER", "ROLE_OWNER")
+
 
 
                         .anyRequest().authenticated()

@@ -24,5 +24,8 @@ public interface ToolStockRepository extends JpaRepository<ToolStock, Long> {
     Optional<ToolStock> findByFactoryAndTool(Factory factory, Tool tool);
     Optional<ToolStock> findByToolIdAndFactoryId(Long toolId, Long factoryId);
 
+
+
+
 }
 

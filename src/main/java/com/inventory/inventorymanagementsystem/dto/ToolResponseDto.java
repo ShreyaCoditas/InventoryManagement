@@ -22,4 +22,7 @@ public class ToolResponseDto {
     private String stockStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // ADD THIS LINE ONLY
+    private Integer returnWindowDays = 30;
 }

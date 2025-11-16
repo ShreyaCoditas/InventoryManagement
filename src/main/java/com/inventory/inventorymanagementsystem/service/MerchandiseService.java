@@ -92,15 +92,16 @@ public class MerchandiseService {
 
         Merchandise saved = merchandiseRepository.save(merchandise);
 
-        MerchandiseResponseDto response = new MerchandiseResponseDto(
-                saved.getId(),
-                saved.getName(),
-                saved.getRewardPoints(),
-                saved.getQuantity(),
-                saved.getImage()
-        );
+//        MerchandiseResponseDto response = new MerchandiseResponseDto(
+//                saved.getId(),
+//                saved.getName(),
+//                saved.getRewardPoints(),
+//                saved.getQuantity(),
+//                saved.getImage(),
+//
+//        );
 
-        return new ApiResponseDto<>(true, "Merchandise added successfully", response);
+        return new ApiResponseDto<>(true, "Merchandise added successfully", null);
     }
 
 
@@ -214,7 +215,7 @@ public class MerchandiseService {
 
         Page<Merchandise> pageResult = merchandiseRepository.findAll(spec, pageable);
 
-        // DTO MAPPING
+        // DTO MAPPING WITH STOCK STATUS
         List<MerchandiseResponseDto> dtos = pageResult.getContent()
                 .stream()
                 .map(m -> new MerchandiseResponseDto(
@@ -222,7 +223,8 @@ public class MerchandiseService {
                         m.getName(),
                         m.getRewardPoints(),
                         m.getQuantity(),
-                        m.getImage()
+                        m.getImage(),
+                        m.getQuantity() != null && m.getQuantity() > 0 ? "INSTOCK" : "OUTOFSTOCK"
                 ))
                 .toList();
 
@@ -235,6 +237,7 @@ public class MerchandiseService {
                 pagination
         );
     }
+
 
 
     public ApiResponseDto<Void> softDeleteMerchandise(Long id) {
@@ -302,15 +305,15 @@ public class MerchandiseService {
 
         Merchandise saved = merchandiseRepository.save(merchandise);
 
-        MerchandiseResponseDto response = new MerchandiseResponseDto(
-                saved.getId(),
-                saved.getName(),
-                saved.getRewardPoints(),
-                saved.getQuantity(),
-                saved.getImage()
-        );
+//        MerchandiseResponseDto response = new MerchandiseResponseDto(
+//                saved.getId(),
+//                saved.getName(),
+//                saved.getRewardPoints(),
+//                saved.getQuantity(),
+//                saved.getImage()
+//        );
 
-        return new ApiResponseDto<>(true, "Merchandise updated successfully", response);
+        return new ApiResponseDto<>(true, "Merchandise updated successfully", null);
     }
 
 

@@ -48,6 +48,18 @@ public class WorkerSpecifications {
         };
     }
 
+    public static Specification<User> belongsToFactory(Long factoryId) {
+        return (root, query, cb) -> {
+            if (factoryId == null) return null;
+
+            // JOIN user_factory_mapping table
+            Join<User, UserFactoryMapping> mapping = root.join("userFactoryMappings", JoinType.INNER);
+
+            return cb.equal(mapping.get("factory").get("id"), factoryId);
+        };
+    }
+
+
 
 
     public static Specification<User> hasLocation(String location) {

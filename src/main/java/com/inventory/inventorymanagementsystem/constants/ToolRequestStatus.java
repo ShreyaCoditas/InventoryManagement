@@ -1,5 +1,5 @@
 package com.inventory.inventorymanagementsystem.constants;
 
 public enum ToolRequestStatus {
-    PENDING,APPROVED,REJECTED
+    PENDING,APPROVED,REJECTED,SENT_TO_PH
 }
