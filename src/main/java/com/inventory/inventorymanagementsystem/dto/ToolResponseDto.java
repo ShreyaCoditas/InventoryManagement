@@ -24,5 +24,8 @@ public class ToolResponseDto {
     private LocalDateTime updatedAt;
 
     // ADD THIS LINE ONLY
-    private Integer returnWindowDays = 30;
+//    private Integer returnWindowDays = 30;
+    private Integer returnWindowDays;
+
+
 }

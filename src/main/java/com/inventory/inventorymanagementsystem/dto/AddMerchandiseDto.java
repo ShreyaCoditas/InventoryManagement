@@ -28,7 +28,7 @@ public class AddMerchandiseDto {
    @Min(1)
     private Long requiredPoints;
     @NotNull
-  @Min(0)
+  @Min(1)
     private Long availableQuantity;
     @ValidImage
     private MultipartFile image;

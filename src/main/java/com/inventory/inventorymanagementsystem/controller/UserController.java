@@ -283,9 +283,17 @@ public class UserController {
 //        return ResponseEntity.ok(plantHeadService.getAllWorkers(filter));
 //    }
 
+//    @GetMapping("/worker/getall")
+//    public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(
+//            @RequestParam Long factoryId,
+//            WorkerFilterSortDto filter
+//    ) {
+//        return plantHeadService.getAllWorkers(factoryId, filter);
+//    }
+
     @GetMapping("/worker/getall")
     public ApiResponseDto<List<WorkerListResponseDto>> getAllWorkers(
-            @RequestParam Long factoryId,
+            @RequestParam(required = false) Long factoryId,
             WorkerFilterSortDto filter
     ) {
         return plantHeadService.getAllWorkers(factoryId, filter);

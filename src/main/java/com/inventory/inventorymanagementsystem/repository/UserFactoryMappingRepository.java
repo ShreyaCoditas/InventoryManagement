@@ -5,6 +5,7 @@ import com.inventory.inventorymanagementsystem.entity.Factory;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.entity.UserFactoryMapping;
 import jakarta.transaction.Transactional;
+import org.antlr.v4.runtime.atn.SemanticContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -28,6 +29,10 @@ public interface UserFactoryMappingRepository extends JpaRepository<UserFactoryM
             "JOIN ufm.factory f " +
             "WHERE ufm.user.id = :userId")
     List<String> findFactoryNamesByUserId(@Param("userId") Long userId);
+
+    Optional<UserFactoryMapping> findByFactoryIdAndUserRoleRoleName(Long factoryId, RoleName roleName);
+
+
 
 
 

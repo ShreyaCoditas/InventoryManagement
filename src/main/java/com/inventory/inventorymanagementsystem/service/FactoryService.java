@@ -6,6 +6,8 @@ import com.inventory.inventorymanagementsystem.constants.RoleName;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Factory;
 import com.inventory.inventorymanagementsystem.entity.User;
+import com.inventory.inventorymanagementsystem.exceptions.CustomException;
+import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.FactoryFilterSortDto;
 import com.inventory.inventorymanagementsystem.repository.*;
 import com.inventory.inventorymanagementsystem.specifications.FactorySpecifications;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -45,35 +48,23 @@ public class FactoryService {
     @Autowired
     private ObjectMapper objectMapper;
 
-//    @Transactional
-//    public FactoryResponseDto createFactory(CreateFactoryRequestDto request, User owner) {
-//        Factory factory = objectMapper.convertValue(request, Factory.class);
-//        factory.setIsActive(ActiveStatus.ACTIVE);
-//        factory.setCreatedAt(LocalDateTime.now());
-//        if (request.getPlantHeadId() != null) {
-//            userRepository.findById(request.getPlantHeadId())
-//                    .ifPresent(factory::setPlantHead);
-//        }
-//        Factory savedFactory = factoryRepository.save(factory);
-//        return new FactoryResponseDto(savedFactory.getId());
-//    }
 
     @Transactional
     public FactoryResponseDto createFactory(CreateFactoryRequestDto request, User owner) {
         if (factoryRepository.existsByNameIgnoreCase(request.getName().trim())) {
-            throw new RuntimeException("Factory with this name already exists");
+            throw new CustomException("Factory with this name already exists", HttpStatus.CONFLICT);
         }
         Factory factory = objectMapper.convertValue(request, Factory.class);
         factory.setIsActive(ActiveStatus.ACTIVE);
         factory.setCreatedAt(LocalDateTime.now());
         if (request.getPlantHeadId() != null) {
             User plantHead = userRepository.findById(request.getPlantHeadId())
-                    .orElseThrow(() -> new RuntimeException("Plant Head not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Plant Head not found"));
             if (plantHead.getIsActive() != ActiveStatus.ACTIVE) {
-                throw new RuntimeException("Cannot assign inactive Plant Head");
+                throw new IllegalStateException("Cannot assign inactive Plant Head");
             }
             if (!plantHead.getRole().getRoleName().equals(RoleName.PLANTHEAD)) {
-                throw new RuntimeException("User is not a Plant Head");
+                throw new IllegalArgumentException("User is not a Plant Head");
             }
             factory.setPlantHead(plantHead);
         }
@@ -86,9 +77,9 @@ public class FactoryService {
     @Transactional
     public FactoryResponseDto updateFactory(UpdateFactoryRequestDto request, User owner) {
         Factory factory = factoryRepository.findById(request.getId())
-                .orElseThrow(() -> new RuntimeException("Factory not found with ID: " + request.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Factory not found with ID: " + request.getId()));
         if (factory.getIsActive() == ActiveStatus.INACTIVE) {
-            throw new RuntimeException("Cannot update a deleted (inactive) factory.");
+            throw new IllegalStateException("Cannot update a deleted (inactive) factory.");
         }
         Factory update = objectMapper.convertValue(request, Factory.class);
         if (update.getName() != null) factory.setName(update.getName());
@@ -96,7 +87,7 @@ public class FactoryService {
         if (update.getAddress() != null) factory.setAddress(update.getAddress());
         if (request.getPlantHeadId() != null) {
             User newPlantHead = userRepository.findById(request.getPlantHeadId())
-                    .orElseThrow(() -> new RuntimeException("Plant Head not found with ID: " + request.getPlantHeadId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Plant Head not found with ID: " + request.getPlantHeadId()));
             factory.setPlantHead(newPlantHead);
         }
         factory.setUpdatedAt(LocalDateTime.now());
@@ -107,7 +98,7 @@ public class FactoryService {
     @Transactional
     public ApiResponseDto<Void> softDeleteFactory(Long id) {
         Factory factory = factoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Factory not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Factory not found"));
         if (factory.getIsActive() == ActiveStatus.INACTIVE) {
             return new ApiResponseDto<>(false, "Factory already inactive", null);
         }
@@ -125,79 +116,18 @@ public class FactoryService {
         return new ApiResponseDto<>(true, "Factories fetched successfully", result);
     }
 
-//
-//    @Transactional
-//    public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-//        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
-//        Sort sort = Sort.by(filter.getSortBy());
-//        if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
-//            sort = sort.descending();
-//        }
-//
-//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-//        Page<Factory> factoryPage = factoryRepository.findAll(spec, pageable);
-//
-//        List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
-//            String plantHeadName = factory.getPlantHead() != null
-//                    ? factory.getPlantHead().getUsername()
-//                    : "Unassigned";
-//
-//            // Fetch Chief Supervisor
-//            List<String> chiefs = userFactoryMappingRepository.findChiefSupervisorsByFactoryId(factory.getId());
-//            String chiefSupervisorName = chiefs.isEmpty() ? "Unassigned" : String.join(", ", chiefs);
-//
-//            //  Other metrics
-//            int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
-//            int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
-//            int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
-//
-//            return new FactoryDto(
-//                    factory.getId(),
-//                    factory.getName(),
-//                    factory.getCity(),
-//                    plantHeadName,
-//                    totalProducts,
-//                    totalWorkers,
-//                    totalTools,
-//                    factory.getIsActive().name(),
-//                    chiefSupervisorName,
-//                    factory.getAddress(),
-//                    factory.getPlantHead() != null ? factory.getPlantHead().getId() : null
-//                    );
-//        }).toList();
-//
-//        Map<String, Object> pagination = PaginationUtil.build(factoryPage);
-//        return new ApiResponseDto<>(
-//                true,
-//                "Factories fetched successfully",
-//                factories,
-//                pagination
-//        );
-//    }
 
     @Transactional
     public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-
-        // 🔥 Build Specification with multi-location filtering
-        Specification<Factory> spec = FactorySpecifications.withFilters(
-                filter.getLocation(),          // Updated
-                filter.getPlantHeadName(),
-                filter.getStatus()
-        );
-
-        // 🔥 Sorting (ASC / DESC)
+        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
         Sort sort = Sort.by(filter.getSortBy());
         if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
             sort = sort.descending();
         }
 
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-
         Page<Factory> factoryPage = factoryRepository.findAll(spec, pageable);
-
         List<FactoryDto> factories = factoryPage.getContent().stream().map(factory -> {
-
-            // 🟦 Plant Head
             String plantHeadName = factory.getPlantHead() != null
                     ? factory.getPlantHead().getUsername()
                     : "Unassigned";
@@ -206,15 +136,11 @@ public class FactoryService {
                     ? factory.getPlantHead().getId()
                     : null;
 
-            // 🟦 Chief Supervisors
             List<String> chiefs = userFactoryMappingRepository.findChiefSupervisorsByFactoryId(factory.getId());
             String chiefSupervisorName = chiefs.isEmpty() ? "Unassigned" : String.join(", ", chiefs);
-
-            // 🟦 Other Metrics
             int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
             int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
             int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
-
             return new FactoryDto(
                     factory.getId(),
                     factory.getName(),
@@ -228,17 +154,9 @@ public class FactoryService {
                     factory.getAddress(),
                     plantHeadId
             );
-
         }).toList();
-
         Map<String, Object> pagination = PaginationUtil.build(factoryPage);
-
-        return new ApiResponseDto<>(
-                true,
-                "Factories fetched successfully",
-                factories,
-                pagination
-        );
+        return new ApiResponseDto<>(true, "Factories fetched successfully", factories, pagination);
     }
 
 

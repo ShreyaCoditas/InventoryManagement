@@ -88,7 +88,7 @@ public class User {
     private List<ToolReturn> toolReturns = new ArrayList<>();
 
     // Bidirectional - One User has Many ToolRestockRequests
-    @OneToMany(mappedBy = "restockedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "requestedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ToolRestockRequest> toolRestockRequests = new ArrayList<>();
 
     // Bidirectional - One User has Many FactoriesInventoryStock (added_by)

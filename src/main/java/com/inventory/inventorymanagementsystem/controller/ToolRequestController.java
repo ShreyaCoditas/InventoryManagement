@@ -2,6 +2,9 @@ package com.inventory.inventorymanagementsystem.controller;
 
 import com.inventory.inventorymanagementsystem.constants.ToolRequestStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.CSRequestFilterSortDto;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.PHRequestFilterDto;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.WorkerRequestFilterDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.service.ToolRequestService;
 import jakarta.validation.Valid;
@@ -30,65 +33,79 @@ public class ToolRequestController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/handle")
-    public ResponseEntity<ApiResponseDto<String>> handleItem(
-            @RequestBody HandleToolRequestItemDto dto,
-            @AuthenticationPrincipal UserPrincipal currentUser) {
-        return ResponseEntity.ok(
-                toolRequestService.handleItem(dto, currentUser)
-        );
+    @PostMapping("/handle/{itemId}/action")
+    public ResponseEntity<ApiResponseDto<String>> actOnItem(
+            @PathVariable Long itemId,
+            @RequestBody ToolItemActionDto dto,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolRequestService.handleItemAction(itemId, dto, currentUser));
+    }
+
+    @GetMapping("/all/cs/requests")
+    public ResponseEntity<ApiResponseDto<List<CSRequestItemResponseDto>>> getRequestsForCS(
+            @ModelAttribute CSRequestFilterSortDto filter,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        ApiResponseDto<List<CSRequestItemResponseDto>> response =
+                toolRequestService.getRequestsForCS(filter, currentUser);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/all/ph/requests")
+    public ResponseEntity<ApiResponseDto<List<PHRequestItemResponseDto>>> getPHRequests(
+            PHRequestFilterDto filter,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolRequestService.getRequestsForPH(filter, currentUser));
+    }
+
+    @GetMapping("/worker/my/requests")
+    public ResponseEntity<ApiResponseDto<List<WorkerRequestResponseDto>>> getMyRequests(
+            @ModelAttribute WorkerRequestFilterDto filter,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolRequestService.getWorkerToolRequestsByStatus(filter, currentUser));
+    }
+
+    @PostMapping("/restock")
+//    @PreAuthorize("hasRole('CHIEFSUPERVISOR')")
+    public ResponseEntity<ApiResponseDto<String>> createRestockRequest(
+            @RequestBody CreateRestockRequestDto dto,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolRequestService.createRestockRequest(dto, currentUser));
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//    @PutMapping("/handle")
-//    public ResponseEntity<ApiResponseDto<String>> handleItem(
-//            @RequestBody HandleToolRequestItemDto dto,
-//            @AuthenticationPrincipal UserPrincipal currentUser
-//    ) {
-//        ApiResponseDto<String> response = toolRequestService.handleItem(dto, currentUser);
-//        return ResponseEntity.ok(response);
-//    }
-//
-//    // List items for CS
-//    @GetMapping("/cs/items")
-//    public ResponseEntity<ApiResponseDto<List<ToolRequestItemResponseDto>>> csItems(
-//            @AuthenticationPrincipal UserPrincipal currentUser
-//    ) {
-//        return ResponseEntity.ok(toolRequestService.getItemsForCS(currentUser));
-//    }
-
-//    // List items for PH
-//    @GetMapping("/ph/items")
-//    public ResponseEntity<ApiResponseDto<List<ToolRequestItemResponseDto>>> phItems(
-//            @AuthenticationPrincipal UserPrincipal currentUser
-//    ) {
-//        return ResponseEntity.ok(toolRequestService.getItemsForPH(currentUser));
-//    }
-
-
-
-
-
-
-
-
-
-
-
+    @GetMapping("/ph/all/restock")
+//    @PreAuthorize("hasRole('PLANTHEAD')")
+    public ResponseEntity<ApiResponseDto<List<RestockRequestResponseDto>>> getPHRestockRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolRequestService.getRestockRequestsForPH(page, size, currentUser));
+    }
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

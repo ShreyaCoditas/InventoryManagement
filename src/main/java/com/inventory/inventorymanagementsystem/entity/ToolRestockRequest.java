@@ -19,11 +19,16 @@ public class ToolRestockRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "restocked_by")
+//    private User restockedBy;
+
+    // 🌟 Correct field name
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "restocked_by")
-    private User restockedBy;
+    @JoinColumn(name = "requested_by")
+    private User requestedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tool_id")
@@ -37,7 +42,7 @@ public class ToolRestockRequest {
     private Factory factory;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "restock_status")
+    @Column(name = "status")
     private RestockStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)

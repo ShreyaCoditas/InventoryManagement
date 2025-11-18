@@ -1,0 +1,20 @@
+package com.inventory.inventorymanagementsystem.dto;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+public class AddFactoryProductionDto {
+
+    @NotNull(message = "Product ID is required")
+    private Long productId;
+
+    @NotNull(message = "Factory ID is required")
+    private Long factoryId;
+
+    @NotNull(message = "Produced quantity is required")
+    @Min(value = 1, message = "Produced quantity must be greater than 0")
+    private Integer producedQuantity;
+}
+

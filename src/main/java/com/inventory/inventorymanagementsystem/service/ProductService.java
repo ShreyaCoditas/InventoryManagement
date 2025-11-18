@@ -4,6 +4,7 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Product;
 import com.inventory.inventorymanagementsystem.entity.ProductCategory;
+import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.repository.FactoryInventoryRepository;
 import com.inventory.inventorymanagementsystem.repository.ProductCategoryRepository;
 import com.inventory.inventorymanagementsystem.repository.ProductRepository;
@@ -66,7 +67,7 @@ public class ProductService {
     // UPDATE
     public ApiResponseDto<ProductResponseDto> updateProduct(Long id, UpdateProductDto dto) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             String name = dto.getName().trim();
@@ -75,28 +76,23 @@ public class ProductService {
             }
             product.setName(name);
         }
-
         if (dto.getProductDescription() != null && !dto.getProductDescription().isBlank()) {
             product.setProductDescription(dto.getProductDescription());
         }
-
         if (dto.getPrice() != null) {
             product.setPrice(dto.getPrice());
             product.setRewardPoint(calculateRewardPoints(dto.getPrice()));
         }
-
         if (dto.getCategoryId() != null || (dto.getNewCategoryName() != null && !dto.getNewCategoryName().isBlank())) {
             validateCategory(dto.getCategoryId(), dto.getNewCategoryName());
             product.setCategory(resolveCategory(dto.getCategoryId(), dto.getNewCategoryName()));
         }
-
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
             if (product.getImage() != null) {
                 cloudinaryService.delete(cloudinaryService.extractPublicId(product.getImage()));
             }
             product.setImage(cloudinaryService.uploadFile(dto.getImage()));
         }
-
         product.setUpdatedAt(LocalDateTime.now());
         return saveAndRespond(product, "Product updated");
     }
@@ -105,7 +101,7 @@ public class ProductService {
     @Transactional
     public ApiResponseDto<Void> deleteProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         product.setIsActive(ActiveStatus.INACTIVE);
         productRepository.save(product);
         return new ApiResponseDto<>(true, "Product deleted successfully", null);
@@ -199,7 +195,7 @@ public class ProductService {
     @Transactional
     public ApiResponseDto<CategoryResponseDto> updateCategory(Long id, CreateOrUpdateCategoryDto request) {
         ProductCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));
         if (request.getCategoryName() != null && !request.getCategoryName().isBlank()) {
             category.setCategoryName(request.getCategoryName());
         }
@@ -219,7 +215,7 @@ public class ProductService {
     @Transactional
     public ApiResponseDto<Void> deleteCategory(Long id) {
         ProductCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));
         productRepository.deleteByCategory(category);
         categoryRepository.delete(category);
         return new ApiResponseDto<>(true, "Category and associated products deleted successfully", null);
@@ -293,16 +289,6 @@ public class ProductService {
                 .setScale(0, BigDecimal.ROUND_CEILING)
                 .intValue();
     }
-
-
-
-
-
-
-
-
-
-
     }
 
 

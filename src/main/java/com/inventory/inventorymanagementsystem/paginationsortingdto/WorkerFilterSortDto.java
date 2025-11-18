@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 public class WorkerFilterSortDto extends BaseFilterSortDto {
     private String location;  // Filter by factory location (city)
-    private String status;
+    private List<String> status;
     private List<String> locations; // ACTIVE / INACTIVE
 }
 

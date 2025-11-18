@@ -1,10 +1,13 @@
 package com.inventory.inventorymanagementsystem.service;
 
 import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
+import com.inventory.inventorymanagementsystem.constants.ToolIssuanceStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.*;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.ReturnFilterSortDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.repository.*;
+import com.inventory.inventorymanagementsystem.specifications.ToolIssuanceSpecifications;
 import com.inventory.inventorymanagementsystem.specifications.ToolSpecifications;
 import com.inventory.inventorymanagementsystem.util.PaginationUtil;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +32,10 @@ public class ToolService {
     private final CloudinaryService cloudinaryService;
     private final FactoryRepository factoryRepository;
     private final UserFactoryMappingRepository userFactoryMappingRepository;
+    private final ToolReturnRepository toolReturnRepository;
+    private final ToolIssuanceRepository toolIssuanceRepository;
 
-    // CREATE TOOL
+    // Create Tool
     public ApiResponseDto<ToolResponseDto> createTool(ToolDto dto) {
         if (toolRepository.existsByNameIgnoreCase(dto.getName().trim())) {
             return new ApiResponseDto<>(false, "Tool already exists", null);
@@ -52,7 +57,7 @@ public class ToolService {
         return new ApiResponseDto<>(true, "Tool created", toDto(tool));
     }
 
-     //UPDATE TOOL
+     //Update Tool
     public ApiResponseDto<ToolResponseDto> updateTool(Long id, UpdateToolDto dto) {
         Tool tool = toolRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tool not found"));
@@ -84,7 +89,7 @@ public class ToolService {
         return new ApiResponseDto<>(true, "Tool updated", toDto(tool));
     }
 
-
+    //To get Tool By Id
     public ApiResponseDto<ToolResponseDto> getToolById(Long id) {
         Tool tool = toolRepository.findByIdAndIsActive(id, ActiveStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("Tool not found with ID: " + id));
@@ -92,8 +97,8 @@ public class ToolService {
         ToolResponseDto responseDto = toDto(tool);
         return new ApiResponseDto<>(true, "Tool fetched successfully", responseDto);
     }
-//
-    // SOFT DELETE
+
+    // Soft delete
     public ApiResponseDto<String> softDeleteTool(Long id) {
         Tool tool = toolRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tool not found"));
@@ -106,8 +111,8 @@ public class ToolService {
         toolRepository.save(tool);
         return new ApiResponseDto<>(true, "Tool deleted", "INACTIVE");
     }
-//
-    // CATEGORY: GET ALL
+
+    // To get all categories
     public ApiResponseDto<List<ToolCategoryResponseDto>> getAllCategories() {
         List<ToolCategoryResponseDto> dtos = categoryRepository.findAll()
                 .stream()
@@ -115,8 +120,8 @@ public class ToolService {
                 .toList();
         return new ApiResponseDto<>(true, "Categories fetched", dtos);
     }
-//
-    // CATEGORY: UPDATE
+
+    // To update the category
     public ApiResponseDto<ToolCategoryResponseDto> updateCategory(Long id, ToolCategoryRequestDto dto) {
         ToolCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -130,34 +135,16 @@ public class ToolService {
         category = categoryRepository.save(category);
         return new ApiResponseDto<>(true, "Category updated", toCategoryDto(category));
     }
-//
-    // CATEGORY: DELETE
+
+    // To delete tool category
     public ApiResponseDto<String> deleteCategory(Long id) {
         ToolCategory cat = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         categoryRepository.delete(cat);
         return new ApiResponseDto<>(true, "Category deleted", null);
     }
-//
-    // HELPER: Resolve Category
-    private ToolCategory resolveCategory(Long id, String name) {
-        if (id != null) {
-            return categoryRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Invalid category ID"));
-        }
-        if (name == null || name.isBlank()) {
-            throw new RuntimeException("Category required");
-        }
-        return categoryRepository.findByCategoryNameIgnoreCase(name.trim())
-                .orElseGet(() -> {
-                    ToolCategory newCat = new ToolCategory();
-                    newCat.setCategoryName(name.trim());
-                    newCat.setCategoryDescription("Auto-created");
-                    newCat.setCreatedAt(LocalDateTime.now());
-                    newCat.setUpdatedAt(LocalDateTime.now());
-                    return categoryRepository.save(newCat);
-                });
-    }
+
+
 
 
     @Transactional(readOnly = true)
@@ -165,48 +152,31 @@ public class ToolService {
             int page, int size, String sortBy, String sortDir,
             String availability, Long factoryId, List<String> categoryNames) {
 
-        // ✅ Step 1: Normalize sort field
         if (sortBy == null || sortBy.isBlank()) {
             sortBy = "id"; // default sort
         }
-//        if ("quantity".equalsIgnoreCase(sortBy)) {
-//            sortBy = "availableQuantity"; // handled manually later
-//        }
         if ("quantity".equalsIgnoreCase(sortBy) || "availableQuantity".equalsIgnoreCase(sortBy)) {
             sortBy = "id"; // prevent JPA from sorting on non-existent field
         }
-
-
-
         Sort sort = "desc".equalsIgnoreCase(sortDir)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
-
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        // ✅ Step 2: Build JPA Specification (for DB-level filtering)
         Specification<Tool> spec = Specification.allOf(
                 ToolSpecifications.isActive(),
                 ToolSpecifications.hasCategories(categoryNames)
         );
-
         Page<Tool> toolPage = toolRepository.findAll(spec, pageable);
         List<Tool> tools = new ArrayList<>(toolPage.getContent());
-
-        // ✅ Step 3: Manual filter (factory-based availability - non-DB join)
         if (factoryId != null) {
             Set<Long> toolIdsInFactory = storageAreaRepository.findToolIdsByFactoryId(factoryId);
             tools = tools.stream()
                     .filter(t -> toolIdsInFactory.contains(t.getId()))
                     .toList();
         }
-
-        // ✅ Step 4: Map to DTOs
         List<ToolResponseDto> dtos = tools.stream()
                 .map(this::toDto)
                 .toList();
-
-        // ✅ Step 5: Manual filter (availability computed field)
         if (availability != null) {
             dtos = dtos.stream()
                     .filter(dto ->
@@ -214,8 +184,6 @@ public class ToolService {
                                     ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
                     .toList();
         }
-
-        // ✅ Step 6: Manual sorting for computed field (quantity)
         if ("availableQuantity".equalsIgnoreCase(sortBy)) {
             dtos = dtos.stream()
                     .sorted("desc".equalsIgnoreCase(sortDir)
@@ -223,12 +191,20 @@ public class ToolService {
                             : Comparator.comparing(ToolResponseDto::getAvailableQuantity))
                     .toList();
         }
-
-        // ✅ Step 7: Pagination info
         Map<String, Object> pagination = PaginationUtil.build(toolPage);
-
-        // ✅ Step 8: Return response
         return new ApiResponseDto<>(true, "Tools fetched successfully", dtos, pagination);
+    }
+
+
+    public ApiResponseDto<List<String>> getStorageSlots(Long factoryId) {
+        List<StorageArea> areas = storageAreaRepository.findByFactoryId(factoryId);
+        List<String> slots = areas.stream()
+                .map(a ->  a.getRowNumber() +
+                         a.getColumnNumber() +
+                         a.getStackLevel() +
+                         a.getBucketNumber())
+                .toList();
+        return new ApiResponseDto<>(true, "Storage slots fetched", slots);
     }
 
 
@@ -265,12 +241,319 @@ public class ToolService {
         return new ApiResponseDto<>(true, "Stock updated successfully", null);
     }
 
+    // Worker requests return (submit returned quantity). Worker must be same as issuance's worker.
+    public ApiResponseDto<String> requestReturn(WorkerReturnRequestDto dto, UserPrincipal currentUser) {
+
+        User worker = currentUser.getUser();
+
+        ToolIssuance issuance = toolIssuanceRepository.findById(dto.getIssuanceId())
+                .orElseThrow(() -> new RuntimeException("Issuance not found"));
+
+        // Validate ownership: issuance.toolRequest.worker == current user
+        if (!issuance.getToolRequest().getWorker().getId().equals(worker.getId())) {
+            throw new RuntimeException("You cannot request return for an issuance you don't own");
+        }
+
+        if (issuance.getTool().getIsPerishable() != null
+                && issuance.getTool().getIsPerishable().name().equalsIgnoreCase("YES")) {
+            throw new RuntimeException("Perishable tools are not returnable");
+        }
+
+        // validate quantity
+        int issuedQty = issuance.getQuantity() != null ? issuance.getQuantity() : 0;
+        if (dto.getQuantity() == null || dto.getQuantity() <= 0) {
+            throw new RuntimeException("Return quantity must be > 0");
+        }
+        if (dto.getQuantity() > issuedQty) {
+            throw new RuntimeException("Return quantity cannot exceed issued quantity");
+        }
+
+        // create a ToolReturn entry (requesting; supervisor will verify actual fit/unfit)
+        ToolReturn tr = ToolReturn.builder()
+                .toolIssuance(issuance)
+                .fitQuantity(0)
+                .unfitQuantity(0)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        toolReturnRepository.save(tr);
+
+        // Set issuance status -> REQUESTED_RETURN (worker submitted return)
+        issuance.setIssuanceStatus(ToolIssuanceStatus.REQUESTED_RETURN);
+        issuance.setRequestedReturnQuantity(dto.getQuantity());
+        toolIssuanceRepository.save(issuance);
+
+        return new ApiResponseDto<>(true, "Return requested successfully", null);
+    }
+
+
+    /**
+     * Get paged return list for CS using Specification + Pageable (DB-level pagination & sorting).
+     * Returns worker image + tool image in DTO.
+     */
+    @Transactional(readOnly = true)
+    public ApiResponseDto<List<CSReturnListResponseDto>> getReturnsForCS(
+            ReturnFilterSortDto filter,
+            UserPrincipal currentUser
+    ) {
+        User cs = currentUser.getUser();
+
+        // find factory for CS
+        var mappingOpt = userFactoryMappingRepository.findByUser(cs);
+        if (mappingOpt.isEmpty()) {
+            throw new RuntimeException("Supervisor not mapped to any factory");
+        }
+        Long factoryId = mappingOpt.get().getFactory().getId();
+
+        // statuses (default to requested, overdue, seized)
+        List<ToolIssuanceStatus> statuses;
+        if (filter.getStatus() == null || filter.getStatus().isEmpty()) {
+            statuses = List.of(
+                    ToolIssuanceStatus.ALLOCATED,
+                    ToolIssuanceStatus.REQUESTED_RETURN,
+                    ToolIssuanceStatus.OVERDUE
+                    //ToolIssuanceStatus.SEIZED
+            );
+        } else {
+            statuses = filter.getStatus().stream()
+                    .map(s -> ToolIssuanceStatus.valueOf(s.toUpperCase()))
+                    .collect(Collectors.toList());
+        }
+
+        // Build Specification
+        Specification<ToolIssuance> spec = Specification.allOf(
+                ToolIssuanceSpecifications.belongsToFactory(factoryId),
+                ToolIssuanceSpecifications.hasStatuses(statuses),
+                // search by tool or worker name (if provided)
+                ToolIssuanceSpecifications.searchByToolOrWorker(filter.getSearch())
+        );
+
+        // Build Pageable (DB-level paging as your mentor requested)
+        Sort sort = "desc".equalsIgnoreCase(filter.getSortDirection())
+                ? Sort.by(filter.getSortBy()).descending()
+                : Sort.by(filter.getSortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+
+        // Query DB (Page<ToolIssuance>)
+        Page<ToolIssuance> page = toolIssuanceRepository.findAll(spec, pageable);
+
+        // Map to DTO
+        List<CSReturnListResponseDto> dtos = page.getContent().stream().map(iss -> {
+            String toolName = iss.getTool() != null ? iss.getTool().getName() : null;
+            String toolImage = iss.getTool() != null ? iss.getTool().getImageUrl() : null;
+          //  Integer qty = iss.getQuantity() != null ? iss.getQuantity() : 0;
+
+            Integer requestedQty = iss.getQuantity(); // worker initially requested
+            Integer returnedQty = iss.getRequestedReturnQuantity(); // worker RETURNED this much
+
+            if (returnedQty == null) returnedQty = 0;
+
+            String workerName = (iss.getToolRequest() != null && iss.getToolRequest().getWorker() != null)
+                    ? iss.getToolRequest().getWorker().getUsername() : null;
+            String workerImage = (iss.getToolRequest() != null && iss.getToolRequest().getWorker() != null)
+                    ? iss.getToolRequest().getWorker().getProfileImage() : null;
+
+            return new CSReturnListResponseDto(
+                    iss.getId(),
+                    toolName,
+                    toolImage,
+                    requestedQty,
+                    returnedQty,
+                    workerName,
+                    workerImage,
+                    iss.getIssuanceStatus(),
+                    iss.getCreatedAt()
+            );
+        }).collect(Collectors.toList());
+
+        Map<String, Object> pagination = PaginationUtil.build(page);
+
+        return new ApiResponseDto<>(true, "Returns fetched successfully", dtos, pagination);
+    }
+
+
+    // CS: verify a return (supervisor inspects and marks fit/unfit)
+    public ApiResponseDto<String> verifyReturn(CSReturnVerificationDto dto, UserPrincipal currentUser) {
+        User cs = currentUser.getUser();
+
+        ToolIssuance issuance = toolIssuanceRepository.findById(dto.getIssuanceId())
+                .orElseThrow(() -> new RuntimeException("Issuance not found"));
+
+        // ensure supervisor belongs to same factory
+        UserFactoryMapping supMap = userFactoryMappingRepository.findByUser(cs)
+                .orElseThrow(() -> new RuntimeException("Supervisor not mapped to factory"));
+        Long supFactoryId = supMap.getFactory().getId();
+
+        // find factory of issuance via the worker mapping (or adjust if you store factory in issuance)
+        // we'll attempt to find factory id from the worker mapping of the worker who had the issuance
+        Long issuanceFactoryId = userFactoryMappingRepository.findFactoryIdByUserId(
+                issuance.getToolRequest().getWorker().getId()
+        ).orElseThrow(() -> new RuntimeException("Issuance worker not mapped to factory"));
+
+        if (!Objects.equals(supFactoryId, issuanceFactoryId)) {
+            throw new RuntimeException("Not authorized to verify this return");
+        }
+
+        int fit = dto.getFitQuantity() != null ? dto.getFitQuantity() : 0;
+        int unfit = dto.getUnfitQuantity() != null ? dto.getUnfitQuantity() : 0;
+
+        int totalVerified = fit + unfit;
+        int issuedQty = issuance.getQuantity() != null ? issuance.getQuantity() : 0;
+        // for simplicity we allow verifying up to issuedQty (not enforcing requested-vs-issued split)
+        if (totalVerified > issuedQty) {
+            throw new RuntimeException("Verified quantity cannot exceed issued quantity");
+        }
+
+        // Save ToolReturn record
+        ToolReturn tr = ToolReturn.builder()
+                .toolIssuance(issuance)
+                .updatedBy(cs)
+                .fitQuantity(fit)
+                .unfitQuantity(unfit)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        toolReturnRepository.save(tr);
+
+        // Update stock for the factory
+        ToolStock stock = toolStockRepository.findByToolIdAndFactoryId(issuance.getTool().getId(), issuanceFactoryId)
+                .orElseThrow(() -> new RuntimeException("Tool stock not found for factory"));
+
+        // Fit items go back to available
+        if (fit > 0) {
+            stock.setAvailableQuantity(stock.getAvailableQuantity() + fit);
+        }
+        // Damaged/unfit reduce total quantity
+        if (unfit > 0) {
+            stock.setTotalQuantity(Math.max(0L, stock.getTotalQuantity() - (long) unfit));
+        }
+        // issued quantity decreases by verified amount
+        stock.setIssuedQuantity(Math.max(0L, stock.getIssuedQuantity() - (long) totalVerified));
+
+        toolStockRepository.save(stock);
+
+        // Update issuance status
+//        if (unfit > 0 && fit == 0) {
+//            issuance.setIssuanceStatus(ToolIssuanceStatus.DAMAGED);
+//        } else {
+//            issuance.setIssuanceStatus(ToolIssuanceStatus.RETURNED);
+//        }
+        issuance.setIssuanceStatus(ToolIssuanceStatus.COMPLETED);
+        toolIssuanceRepository.save(issuance);
+
+        return new ApiResponseDto<>(true, "Return verified", null);
+    }
+
+    /**
+     * Scheduler: Marks ALLOCATED tools as OVERDUE after 30 days.
+     */
+    public void processOverdueAndSeize() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Fetch all active issuances that can become overdue
+        List<ToolIssuance> all = toolIssuanceRepository.findAll();
+
+        for (ToolIssuance iss : all) {
+
+            // Skip COMPLETED (already returned and verified)
+            if (iss.getIssuanceStatus() == ToolIssuanceStatus.COMPLETED) {
+                continue;
+            }
+
+            // Skip REQUESTED_RETURN (worker already requested)
+            if (iss.getIssuanceStatus() == ToolIssuanceStatus.REQUESTED_RETURN) {
+                continue;
+            }
+
+            // Skip perishable tools (no return window)
+            if (iss.getTool().getIsPerishable() != null &&
+                    iss.getTool().getIsPerishable().name().equalsIgnoreCase("YES")) {
+                continue;
+            }
+
+            // Take issuedAt (NOT createdAt)
+            LocalDateTime issuedAt = iss.getIssuedAt();
+            if (issuedAt == null) continue;
+
+//            LocalDateTime dueDate = issuedAt.plusDays(30);
+            // TESTING ONLY: overdue after 5 minutes
+            LocalDateTime dueDate = issuedAt.plusMinutes(5);
+
+
+            // Mark overdue
+            if (now.isAfter(dueDate)) {
+                iss.setIssuanceStatus(ToolIssuanceStatus.OVERDUE);
+            }
+        }
+
+        toolIssuanceRepository.saveAll(all);
+    }
+
+
+//    // Scheduler helper: update issuances to OVERDUE / SEIZED based on createdAt + rules
+//    // This method can be called by a scheduler bean.
+//    public void processOverdueAndSeize() {
+//        LocalDateTime now = LocalDateTime.now();
+//
+//        // fetch all ALLOCATED or REQUESTED_RETURN or OVERDUE issued
+//        List<ToolIssuance> all = toolIssuanceRepository.findAll();
+//
+//        for (ToolIssuance iss : all) {
+//            // skip perishable
+//            if (iss.getTool().getIsPerishable() != null &&
+//                    iss.getTool().getIsPerishable().name().equalsIgnoreCase("YES")) {
+//                continue;
+//            }
+//
+//            // if already RETURNED or DAMAGED, ignore
+//            if (iss.getIssuanceStatus() == ToolIssuanceStatus.COMPLETED) {
+//                continue;
+//            }
+//
+//            LocalDateTime issuedAt = iss.getIssuedAt();
+//            LocalDateTime due = issuedAt.plusDays(30);
+//           // LocalDateTime seize = due.plusDays(7);
+//
+////            if (now.isAfter(seize)) {
+////                if (iss.getIssuanceStatus() != ToolIssuanceStatus.SEIZED) {
+////                    iss.setIssuanceStatus(ToolIssuanceStatus.SEIZED);
+////                }
+//        //    }
+////        if (now.isAfter(due)) {
+////                if (iss.getIssuanceStatus() != ToolIssuanceStatus.OVERDUE) {
+////                    iss.setIssuanceStatus(ToolIssuanceStatus.OVERDUE);
+////                }
+////            }
+//        }
+//
+//        toolIssuanceRepository.saveAll(all);
+//    }
+//
 
 
 
 
-
-
+    // HELPER: Resolve Category
+    private ToolCategory resolveCategory(Long id, String name) {
+        if (id != null) {
+            return categoryRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Invalid category ID"));
+        }
+        if (name == null || name.isBlank()) {
+            throw new RuntimeException("Category required");
+        }
+        return categoryRepository.findByCategoryNameIgnoreCase(name.trim())
+                .orElseGet(() -> {
+                    ToolCategory newCat = new ToolCategory();
+                    newCat.setCategoryName(name.trim());
+                    newCat.setCategoryDescription("Auto-created");
+                    newCat.setCreatedAt(LocalDateTime.now());
+                    newCat.setUpdatedAt(LocalDateTime.now());
+                    return categoryRepository.save(newCat);
+                });
+    }
 
     // HELPER: Build Response
     private ToolResponseDto toDto(Tool t) {
@@ -278,6 +561,10 @@ public class ToolService {
         Integer available = toolStockRepository.sumAvailableQuantityByToolId(t.getId());
         total = total != null ? total : 0;
         available = available != null ? available : 0;
+        Integer returnWindowDays =
+                t.getIsPerishable().name().equalsIgnoreCase("NO")
+                        ? 30     // Only NON-perishable tools get 30 days
+                        : null;  // Perishable tools have no return window
         String stockStatus;
         int threshold = (t.getThreshold() != null ? t.getThreshold() : 0);
         if (available >= threshold) {
@@ -300,7 +587,8 @@ public class ToolService {
                 .totalQuantity(total.longValue())  // ✅ total quantity added
                 .status(t.getIsActive() != null ? t.getIsActive().name() : null)
                 .stockStatus(stockStatus)
-                .returnWindowDays(30)
+                //.returnWindowDays(30)
+                .returnWindowDays(returnWindowDays)
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
                 .build();

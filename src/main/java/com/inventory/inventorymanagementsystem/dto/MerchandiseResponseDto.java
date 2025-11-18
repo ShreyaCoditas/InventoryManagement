@@ -23,5 +23,6 @@ public class MerchandiseResponseDto {
     private Long availableQuantity;
     private String imageUrl;
     private String stockStatus;
+    private String status;   // NEW FIELD
 }
 

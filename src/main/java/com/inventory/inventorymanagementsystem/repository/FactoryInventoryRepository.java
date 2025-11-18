@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FactoryInventoryRepository extends JpaRepository<FactoryInventoryStock, Long> {
 
@@ -18,6 +19,9 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     @Query("SELECT f.product.id, SUM(f.quantity) FROM FactoryInventoryStock f GROUP BY f.product.id")
     List<Object[]> findProductQuantities();
+
+    Optional<FactoryInventoryStock> findByFactoryIdAndProductId(Long factoryId, Long productId);
+
 
 
 

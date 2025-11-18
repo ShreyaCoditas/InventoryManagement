@@ -10,4 +10,6 @@ public class MerchandiseFilterSortDto extends BaseFilterSortDto{
     private Integer minRewardPoints;
     private Integer maxRewardPoints;
     private String stockStatus; // IN_STOCK, OUT_OF_STOCK
+    private String status; // ACTIVE or INACTIVE
+
 }

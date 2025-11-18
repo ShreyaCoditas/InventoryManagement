@@ -71,8 +71,8 @@ public class SecurityConfig {
                                 .requestMatchers("api/owner/create/chiefsupervisor").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/allsupervisor").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/delete/supervisor/{supervisorId}").hasAnyRole("OWNER","PLANTHEAD")
-                                .requestMatchers("/api/owner/planthead/factories").hasRole("OWNER")
-                                .requestMatchers("/api/owner/factories/{factoryId}/supervisors").hasRole("OWNER")
+                                .requestMatchers("/api/owner/planthead/factories").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/factories/{factoryId}/supervisors").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/users").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/{factoryId}/available-bays").hasRole("PLANTHEAD")
 
@@ -80,7 +80,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/owner/worker/getall").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/update/{id}").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
-                                .requestMatchers("/api/owner//{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
 
 
 
@@ -88,9 +88,21 @@ public class SecurityConfig {
 
 
                                 .requestMatchers("/api/tool-request/worker").hasRole("WORKER")
-                                .requestMatchers("/api/tool-request/handle").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/tool-request/handle/{itemId}/action").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/profile/upload-image").hasRole("OWNER")
                                 .requestMatchers("/api/tools/stock/add").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tools/factory/{factoryId}/slots").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tool-request/all/cs/requests").hasRole("CHIEFSUPERVISOR")
+                                .requestMatchers("/api/tool-request/all/ph/requests").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tool-request/worker/my/requests").hasRole("WORKER")
+                                .requestMatchers("/api/tool-request/restock").hasRole("CHIEFSUPERVISOR")
+                                .requestMatchers("/api/tool-request/ph/all/restock").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/tools/worker/return").hasRole("WORKER")
+                                .requestMatchers("/api/tools/cs/requests").hasRole("CHIEFSUPERVISOR")
+                                .requestMatchers("/api/tools/verify/return").hasRole("CHIEFSUPERVISOR")
+
+
+
 
 
 
@@ -100,7 +112,14 @@ public class SecurityConfig {
                                 .requestMatchers("/api/owner/delete/merchandise/{id}").hasAnyRole("OWNER","CENTRALOFFICER")
                                 .requestMatchers("/api/tools/**").hasAnyRole("OWNER","PLANTHEAD")
 
+                                .requestMatchers("/api/product/central-office/restock-requests").hasRole("CENTRALOFFICER")
+                                .requestMatchers("/api/product/plant-head/products/add-stock").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/product/factories/restock-requests/{requestId}/complete").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/product/factories/my-restock-requests").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/product/add/production").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/product/central-office/my-restock-requests").hasRole("CENTRALOFFICER")
 
+                                .requestMatchers("/api/product/central-office").hasRole("CENTRALOFFICER")
 
                                 .requestMatchers("/api/products/**").hasRole("OWNER")
 

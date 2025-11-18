@@ -7,6 +7,7 @@ import com.inventory.inventorymanagementsystem.entity.CentralOffice;
 import com.inventory.inventorymanagementsystem.entity.Role;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.entity.UserCentralOfficeMapping;
+import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.repository.CentralOfficeRepository;
 import com.inventory.inventorymanagementsystem.repository.RoleRepository;
 import com.inventory.inventorymanagementsystem.repository.UserCentralOfficeRepository;
@@ -32,10 +33,10 @@ public class CentralOfficeService {
     public ApiResponseDto<Void> addCentralOfficer(AddCentralOfficerDto dto) {
         CentralOffice office = centralOfficeRepository.findAll().stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Central Office not found. Please seed one."));
+                .orElseThrow(() -> new ResourceNotFoundException("Central Office not found. Please seed one."));
         userRepository.findByEmailIgnoreCase(dto.getEmail())
                 .ifPresent(u -> {
-                    throw new RuntimeException(
+                    throw new ResourceNotFoundException(
                             u.getRole().getRoleName().equals(RoleName.CENTRALOFFICER.name())
                                     ? "User is already a Central Officer"
                                     : "User exists but has another role"
@@ -43,7 +44,7 @@ public class CentralOfficeService {
                 });
 
         Role centralRole = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
-                .orElseThrow(() -> new RuntimeException("CENTRAL_OFFICER role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("CENTRAL_OFFICER role not found"));
         User officer = User.builder()
                 .username(dto.getName())
                 .email(dto.getEmail())
@@ -66,7 +67,7 @@ public class CentralOfficeService {
     @Transactional
     public ApiResponseDto<Void> updateCentralOfficer(Long id, AddCentralOfficerDto dto) {
         User officer = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Central Officer not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Central Officer not found with ID: " + id));
         if (officer.getIsActive() == ActiveStatus.INACTIVE) {
             return new ApiResponseDto<>(false, "Cannot update an inactive Central Officer", null);
         }
@@ -81,7 +82,7 @@ public class CentralOfficeService {
     @Transactional
     public ApiResponseDto<Void> softDeleteCentralOfficer(Long officerId) {
         User officer = userRepository.findById(officerId)
-                .orElseThrow(() -> new RuntimeException("Central Officer not found with ID: " + officerId));
+                .orElseThrow(() -> new IllegalStateException("Central Officer not found with ID: " + officerId));
         if (!officer.getRole().getRoleName().equals(RoleName.CENTRALOFFICER)) {
             return new ApiResponseDto<>(false, "User is not a Central Officer", null);
         }

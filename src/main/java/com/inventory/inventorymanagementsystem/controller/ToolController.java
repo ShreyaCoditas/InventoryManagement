@@ -1,6 +1,7 @@
 package com.inventory.inventorymanagementsystem.controller;
 
 import com.inventory.inventorymanagementsystem.dto.*;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.ReturnFilterSortDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.service.ToolService;
 import jakarta.validation.Valid;
@@ -91,6 +92,15 @@ public class ToolController {
         return ResponseEntity.ok(toolService.deleteCategory(id));
     }
 
+    @GetMapping("/factory/{factoryId}/slots")
+    public ResponseEntity<ApiResponseDto<List<String>>> getStorageSlots(
+            @PathVariable Long factoryId) {
+
+        ApiResponseDto<List<String>> response =
+                toolService.getStorageSlots(factoryId);
+
+        return ResponseEntity.ok(response);
+    }
 
 
     @PostMapping("/stock/add")
@@ -100,5 +110,32 @@ public class ToolController {
         ApiResponseDto<String> response = toolService.addToolStock(dto, currentUser);
         return ResponseEntity.ok(response);
     }
+
+    //  Worker → submit return request
+    @PostMapping("/worker/return")
+    public ResponseEntity<ApiResponseDto<String>> requestReturn(
+            @RequestBody WorkerReturnRequestDto dto,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolService.requestReturn(dto, currentUser));
+    }
+
+    // GET with query params mapped to ReturnFilterSortDto (use @ModelAttribute in controller if needed)
+    @GetMapping("cs/requests")
+    public ResponseEntity<ApiResponseDto<List<CSReturnListResponseDto>>> getReturns(
+            @ModelAttribute ReturnFilterSortDto filter,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolService.getReturnsForCS(filter, currentUser));
+    }
+
+    @PostMapping("/verify/return")
+    public ResponseEntity<ApiResponseDto<String>> verifyReturn(
+            @RequestBody CSReturnVerificationDto dto,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        return ResponseEntity.ok(toolService.verifyReturn(dto, currentUser));
+    }
+
 
 }

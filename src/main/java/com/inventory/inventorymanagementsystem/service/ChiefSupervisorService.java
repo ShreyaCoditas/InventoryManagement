@@ -7,9 +7,12 @@ import com.inventory.inventorymanagementsystem.dto.CreateChiefSupervisorRequestD
 import com.inventory.inventorymanagementsystem.dto.ChiefSupervisorResponseDto;
 import com.inventory.inventorymanagementsystem.dto.FactorySupervisorsResponseDto;
 import com.inventory.inventorymanagementsystem.entity.*;
+import com.inventory.inventorymanagementsystem.exceptions.CustomException;
+import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -36,14 +39,14 @@ public class ChiefSupervisorService {
     @Transactional
     public ApiResponseDto<ChiefSupervisorResponseDto> createChiefSupervisor(CreateChiefSupervisorRequestDto dto, User currentUser) {
         Factory factory = factoryRepository.findById(dto.getFactoryId())
-                .orElseThrow(() -> new RuntimeException("Factory not found with ID: " + dto.getFactoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Factory not found with ID: " + dto.getFactoryId()));
         if (userFactoryRepository.existsByFactory_IdAndAssignedRole(dto.getFactoryId(), RoleName.CHIEFSUPERVISOR)) {
             return new ApiResponseDto<>(false, "Factory already has a Chief Supervisor assigned", null);
         }
         User supervisor = userRepository.findByEmailIgnoreCase(dto.getEmail())
                 .map(existing -> {
                     if (!existing.getRole().getRoleName().equals(RoleName.CHIEFSUPERVISOR)) {
-                        throw new RuntimeException("User already exists but is not a Chief Supervisor");
+                        throw new CustomException("User already exists but is not a Chief Supervisor", HttpStatus.BAD_REQUEST);
                     }
                     return existing;
                 })
@@ -60,13 +63,7 @@ public class ChiefSupervisorService {
         List<ChiefSupervisorResponseDto> result = mappings.stream().map(map -> {
             User u = map.getUser();
             Factory f = map.getFactory();
-            return new ChiefSupervisorResponseDto(
-                    u.getId(),
-                    u.getUsername(),
-                    u.getEmail(),
-                    f.getName(),
-                    u.getIsActive().name()
-            );
+            return new ChiefSupervisorResponseDto(u.getId(), u.getUsername(), u.getEmail(), f.getName(), u.getIsActive().name());
         }).toList();
         return new ApiResponseDto<>(true, "Supervisors fetched successfully", result);
     }
@@ -74,7 +71,7 @@ public class ChiefSupervisorService {
     @Transactional
     public ApiResponseDto<Void> softDeleteSupervisor(Long supervisorId) {
         User supervisor = userRepository.findById(supervisorId)
-                .orElseThrow(() -> new RuntimeException("Supervisor not found with ID: " + supervisorId));
+                .orElseThrow(() -> new ResourceNotFoundException("Supervisor not found with ID: " + supervisorId));
 
         if (!supervisor.getRole().getRoleName().equals(RoleName.CHIEFSUPERVISOR)) {
             return new ApiResponseDto<>(false, "User is not a Chief Supervisor", null);
@@ -89,12 +86,7 @@ public class ChiefSupervisorService {
                 .findByFactoryIdAndAssignedRole(factoryId, RoleName.CHIEFSUPERVISOR);
         List<FactorySupervisorsResponseDto> supervisors = mappings.stream().map(map -> {
             User u = map.getUser();
-            return new FactorySupervisorsResponseDto(
-                    u.getId(),
-                    u.getUsername(),
-                    u.getEmail(),
-                    u.getIsActive().name()
-            );
+            return new FactorySupervisorsResponseDto(u.getId(), u.getUsername(), u.getEmail(), u.getIsActive().name());
         }).toList();
         return new ApiResponseDto<>(true, "Supervisors fetched successfully for factory ID: " + factoryId, supervisors);
     }
@@ -106,7 +98,7 @@ public class ChiefSupervisorService {
 
     private User createNewChiefSupervisor(CreateChiefSupervisorRequestDto dto) {
         Role role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
-                .orElseThrow(() -> new RuntimeException("Role not found: CHIEF_SUPERVISOR"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: CHIEF_SUPERVISOR"));
 
         User user = new User();
         user.setUsername(dto.getName());
