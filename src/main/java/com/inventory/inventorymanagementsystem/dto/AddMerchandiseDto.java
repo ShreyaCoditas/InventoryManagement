@@ -9,28 +9,18 @@ import org.springframework.web.multipart.MultipartFile;
 @Data
 public class AddMerchandiseDto {
 
-//    @NotBlank
-//    private String name;
-//
-//    @NotBlank
-//    private String image;
-//
-//    @NotNull
-//    @Min(1)
-//    private Integer rewardPoints;
-//
-//    @NotNull
-//    @Min(0)
-//    private Integer quantity;
-  @NotBlank
-    private String name;
-   @NotNull
-   @Min(1)
+   @NotBlank(message = "name is required")
+   private String name;
+
+    @NotNull(message = "Required points must not be null")
+    @Min(value = 1, message = "Required points must be at least 1")
     private Long requiredPoints;
-    @NotNull
-  @Min(1)
+
+    @NotNull(message = "Available quantity must not be null")
+    @Min(value = 1, message = "Available quantity must be at least 1")
     private Long availableQuantity;
-    @ValidImage
+
+    @ValidImage(message = "Please upload a valid image file (e.g., JPG, PNG)")
     private MultipartFile image;
 
 

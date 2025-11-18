@@ -10,6 +10,5 @@ import java.util.List;
 
 @Repository
 public interface MerchandiseRepository extends JpaRepository<Merchandise, Long>, JpaSpecificationExecutor<Merchandise> {
-    List<Merchandise> findByIsActive(ActiveStatus status);
-    boolean existsByNameIgnoreCase(String name);
+
 }

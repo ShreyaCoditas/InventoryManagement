@@ -4,6 +4,7 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.ToolIssuanceStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.*;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.BaseFilterSortDto;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.ReturnFilterSortDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.repository.*;
@@ -147,53 +148,136 @@ public class ToolService {
 
 
 
+//    @Transactional(readOnly = true)
+//    public ApiResponseDto<List<ToolResponseDto>> getAllTools(
+//            int page, int size, String sortBy, String sortDir,
+//            String availability, Long factoryId, List<String> categoryNames) {
+//
+//        if (sortBy == null || sortBy.isBlank()) {
+//            sortBy = "id"; // default sort
+//        }
+//        if ("quantity".equalsIgnoreCase(sortBy) || "availableQuantity".equalsIgnoreCase(sortBy)) {
+//            sortBy = "id"; // prevent JPA from sorting on non-existent field
+//        }
+//        Sort sort = "desc".equalsIgnoreCase(sortDir)
+//                ? Sort.by(sortBy).descending()
+//                : Sort.by(sortBy).ascending();
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//        Specification<Tool> spec = Specification.allOf(
+//                ToolSpecifications.isActive(),
+//                ToolSpecifications.hasCategories(categoryNames)
+//        );
+//        Page<Tool> toolPage = toolRepository.findAll(spec, pageable);
+//        List<Tool> tools = new ArrayList<>(toolPage.getContent());
+//        if (factoryId != null) {
+//            Set<Long> toolIdsInFactory = storageAreaRepository.findToolIdsByFactoryId(factoryId);
+//            tools = tools.stream()
+//                    .filter(t -> toolIdsInFactory.contains(t.getId()))
+//                    .toList();
+//        }
+//        List<ToolResponseDto> dtos = tools.stream()
+//                .map(this::toDto)
+//                .toList();
+//        if (availability != null) {
+//            dtos = dtos.stream()
+//                    .filter(dto ->
+//                            ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0) ||
+//                                    ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
+//                    .toList();
+//        }
+//        if ("availableQuantity".equalsIgnoreCase(sortBy)) {
+//            dtos = dtos.stream()
+//                    .sorted("desc".equalsIgnoreCase(sortDir)
+//                            ? Comparator.comparing(ToolResponseDto::getAvailableQuantity).reversed()
+//                            : Comparator.comparing(ToolResponseDto::getAvailableQuantity))
+//                    .toList();
+//        }
+//        Map<String, Object> pagination = PaginationUtil.build(toolPage);
+//        return new ApiResponseDto<>(true, "Tools fetched successfully", dtos, pagination);
+//    }
+
     @Transactional(readOnly = true)
     public ApiResponseDto<List<ToolResponseDto>> getAllTools(
-            int page, int size, String sortBy, String sortDir,
-            String availability, Long factoryId, List<String> categoryNames) {
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
+            String availability,
+            String search,
+            Long factoryId,
+            List<String> categoryNames,
+            List<String> factoryNames  // NEW
+    ) {
 
-        if (sortBy == null || sortBy.isBlank()) {
-            sortBy = "id"; // default sort
+        String originalSortBy = sortBy;
+        if ("availableQuantity".equalsIgnoreCase(sortBy)) {
+            sortBy = "id"; // cannot sort at DB level
         }
-        if ("quantity".equalsIgnoreCase(sortBy) || "availableQuantity".equalsIgnoreCase(sortBy)) {
-            sortBy = "id"; // prevent JPA from sorting on non-existent field
-        }
+
         Sort sort = "desc".equalsIgnoreCase(sortDir)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
+
         Pageable pageable = PageRequest.of(page, size, sort);
+
+        // ===== SPECIFICATION =====
         Specification<Tool> spec = Specification.allOf(
                 ToolSpecifications.isActive(),
-                ToolSpecifications.hasCategories(categoryNames)
+                ToolSpecifications.hasCategories(categoryNames),
+                ToolSpecifications.hasFactoryNames(factoryNames) ,// NEW
+                ToolSpecifications.searchByName(search)
         );
+
         Page<Tool> toolPage = toolRepository.findAll(spec, pageable);
+
         List<Tool> tools = new ArrayList<>(toolPage.getContent());
+
+        // ===== FILTER BY FACTORY ID =====
         if (factoryId != null) {
             Set<Long> toolIdsInFactory = storageAreaRepository.findToolIdsByFactoryId(factoryId);
             tools = tools.stream()
                     .filter(t -> toolIdsInFactory.contains(t.getId()))
                     .toList();
         }
+
+        // ===== DTO MAPPING =====
         List<ToolResponseDto> dtos = tools.stream()
                 .map(this::toDto)
                 .toList();
+
+        // ===== AVAILABILITY FILTER =====
         if (availability != null) {
             dtos = dtos.stream()
                     .filter(dto ->
-                            ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0) ||
-                                    ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0))
+                            ("InStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() > 0)
+                                    ||
+                                    ("OutOfStock".equalsIgnoreCase(availability) && dto.getAvailableQuantity() == 0)
+                    )
                     .toList();
         }
-        if ("availableQuantity".equalsIgnoreCase(sortBy)) {
+
+        // ===== SORT BY AVAILABLE QUANTITY =====
+        if ("availableQuantity".equalsIgnoreCase(originalSortBy)) {
             dtos = dtos.stream()
                     .sorted("desc".equalsIgnoreCase(sortDir)
                             ? Comparator.comparing(ToolResponseDto::getAvailableQuantity).reversed()
-                            : Comparator.comparing(ToolResponseDto::getAvailableQuantity))
+                            : Comparator.comparing(ToolResponseDto::getAvailableQuantity)
+                    )
                     .toList();
         }
+
         Map<String, Object> pagination = PaginationUtil.build(toolPage);
-        return new ApiResponseDto<>(true, "Tools fetched successfully", dtos, pagination);
+
+        return new ApiResponseDto<>(
+                true,
+                "Tools fetched successfully",
+                dtos,
+                pagination
+        );
     }
+
+
+
 
 
     public ApiResponseDto<List<String>> getStorageSlots(Long factoryId) {

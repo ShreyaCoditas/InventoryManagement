@@ -6,6 +6,7 @@ import com.inventory.inventorymanagementsystem.constants.RoleName;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Factory;
 import com.inventory.inventorymanagementsystem.entity.User;
+import com.inventory.inventorymanagementsystem.entity.UserFactoryMapping;
 import com.inventory.inventorymanagementsystem.exceptions.CustomException;
 import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.FactoryFilterSortDto;
@@ -158,6 +159,23 @@ public class FactoryService {
         Map<String, Object> pagination = PaginationUtil.build(factoryPage);
         return new ApiResponseDto<>(true, "Factories fetched successfully", factories, pagination);
     }
+
+    @Transactional
+    public ApiResponseDto<UserFactoryResponseDto> getFactoryIdByUser(Long userId) {
+
+        UserFactoryMapping mapping = userFactoryMappingRepository
+                .findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("No factory mapped to this user"));
+
+        Long factoryId = mapping.getFactory().getId();
+
+        return new ApiResponseDto<>(
+                true,
+                "Factory ID fetched successfully",
+                new UserFactoryResponseDto(factoryId)
+        );
+    }
+
 
 
 }

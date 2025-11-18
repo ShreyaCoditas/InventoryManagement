@@ -119,8 +119,8 @@ public class UserController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponseDto<Void>> updateCentralOfficer(
-            @PathVariable Long id,
-            @Valid @RequestBody AddCentralOfficerDto dto) {
+            @Valid @PathVariable Long id,
+            @Valid @RequestBody UpdateCentralOfficerDto dto) {
 
         ApiResponseDto<Void> response = centralOfficeService.updateCentralOfficer(id, dto);
         return ResponseEntity.ok(response);
@@ -356,6 +356,18 @@ public class UserController {
         ApiResponseDto<Void> response = merchandiseService.softDeleteMerchandise(id);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/users/{userId}/factory-id")
+    public ResponseEntity<ApiResponseDto<UserFactoryResponseDto>> getFactoryIdByUser(
+            @PathVariable Long userId
+    ) {
+        ApiResponseDto<UserFactoryResponseDto> response =
+                factoryService.getFactoryIdByUser(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 

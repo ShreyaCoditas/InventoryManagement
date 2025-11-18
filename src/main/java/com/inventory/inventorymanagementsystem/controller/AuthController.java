@@ -2,7 +2,7 @@ package com.inventory.inventorymanagementsystem.controller;
 
 import com.inventory.inventorymanagementsystem.dto.LoginRequestDto;
 import com.inventory.inventorymanagementsystem.dto.LoginResponseDto;
-import com.inventory.inventorymanagementsystem.dto.RegisterDto;
+import com.inventory.inventorymanagementsystem.dto.DistributorRegisterDto;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.dto.ApiResponseDto;
 import com.inventory.inventorymanagementsystem.service.UserService;
@@ -21,10 +21,17 @@ public class AuthController {
 
     //Register API
     @PostMapping("/register")
-    public ResponseEntity<ApiResponseDto<Void>> register(@Valid @RequestBody RegisterDto userDto) {
-        User user = userService.register(userDto);
-        ApiResponseDto<Void> apiResponseDTO = new ApiResponseDto<>(true, "User registered successfully");
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
+    public ResponseEntity<ApiResponseDto<Void>> registerDistributor(
+            @Valid @RequestBody DistributorRegisterDto dto) {
+
+        userService.registerDistributor(dto);
+
+        ApiResponseDto<Void> response = new ApiResponseDto<>(
+                true,
+                "Distributor registered successfully!"
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // Login API

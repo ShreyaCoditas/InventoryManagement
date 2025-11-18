@@ -12,8 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface ToolStockRepository extends JpaRepository<ToolStock, Long> {
-    Optional<ToolStock> findByToolId(Long toolId);
-    List<ToolStock> findByFactoryId(Long factoryId);
+
 
     @Query("SELECT SUM(ts.totalQuantity) FROM ToolStock ts WHERE ts.tool.id = :toolId")
     Integer sumTotalQuantityByToolId(@Param("toolId") Long toolId);

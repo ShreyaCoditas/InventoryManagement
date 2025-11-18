@@ -10,7 +10,7 @@ import java.util.List;
 public interface ToolRestockRequestRepository
         extends JpaRepository<ToolRestockRequest, Long>,
         JpaSpecificationExecutor<ToolRestockRequest> {
-    List<ToolRestockRequest> findByFactory_Id(Long factoryId);
+
 }
 
 

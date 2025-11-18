@@ -45,6 +45,18 @@ public class User {
     @Column(name = "password", nullable = false, columnDefinition = "TEXT")
     private String password;
 
+    @Column(name = "company_name", length = 150)
+    private String companyName;
+
+    @Column(name = "city", length = 100)
+    private String city;
+
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
+    @Column(name = "tax_registration_number", unique = true, length = 50)
+    private String taxRegistrationNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "is_active",nullable=false)
     private ActiveStatus isActive;

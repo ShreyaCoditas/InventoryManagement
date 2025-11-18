@@ -11,14 +11,5 @@ import java.util.List;
 public interface ToolRequestRepository extends JpaRepository<ToolRequest,Long> {
 
 
-   // List<ToolRequest> findByStatus(ToolRequestStatus status);
-
-    //List<ToolRequest> findByWorkerId(Long workerId);
-
-    // ToolRequestRepository.java
-    //Page<ToolRequest> findByFactoryId(Long factoryId, Pageable pageable);
-    //Page<ToolRequest> findByFactoryIdAndStatus(Long factoryId, ToolRequestStatus status, Pageable pageable);
-
-
 
 }

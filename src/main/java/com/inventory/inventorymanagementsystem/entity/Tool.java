@@ -73,6 +73,10 @@ public class Tool {
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ToolRequestItem> toolRequestItems = new ArrayList<>();
 
+    @OneToMany(mappedBy = "tool", fetch = FetchType.LAZY)
+    private List<ToolStock> toolStocks;
+
+
 
     // Bidirectional - One Tool has Many ToolIssuances
     @OneToMany(mappedBy = "tool", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

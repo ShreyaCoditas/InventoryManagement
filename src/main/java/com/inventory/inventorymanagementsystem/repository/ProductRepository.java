@@ -18,28 +18,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     void deleteByCategory(ProductCategory category);
 
-    @Query("SELECT COALESCE(SUM(fis.quantity),0) " +
-            "FROM FactoryInventoryStock fis " +
-            "WHERE fis.product.id = :productId")
-    Integer findTotalQuantityByProductId(@Param("productId") Long productId);
-
-    @Query("SELECT COALESCE(SUM(fis.quantity),0) " +
-            "FROM FactoryInventoryStock fis " +
-            "WHERE fis.product.id = :productId AND fis.factory.id = :factoryId")
-    Integer findTotalQuantityByProductIdAndFactoryId(
-            @Param("productId") Long productId,
-            @Param("factoryId") Long factoryId);
-
-
-    // Find all active products
-    List<Product> findByIsActive(ActiveStatus status);
-
-    // Optional: Find all products by category name (useful for filtering)
-    List<Product> findByCategory_CategoryNameIgnoreCaseAndIsActive(String categoryName, ActiveStatus status);
-
-    // Optional: Search products by name (for frontend search bar)
-    List<Product> findByNameContainingIgnoreCaseAndIsActive(String name, ActiveStatus status);
-
     boolean existsByNameIgnoreCase(String trim);
 
     Page<Product> findByIsActive(ActiveStatus status, Pageable pageable);

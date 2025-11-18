@@ -1,6 +1,7 @@
 package com.inventory.inventorymanagementsystem.controller;
 
 import com.inventory.inventorymanagementsystem.dto.*;
+import com.inventory.inventorymanagementsystem.paginationsortingdto.BaseFilterSortDto;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.ReturnFilterSortDto;
 import com.inventory.inventorymanagementsystem.security.UserPrincipal;
 import com.inventory.inventorymanagementsystem.service.ToolService;
@@ -49,6 +50,21 @@ public class ToolController {
     }
 
 
+//    @GetMapping("/getAll")
+//    public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "id") String sortBy,
+//            @RequestParam(defaultValue = "asc") String sortDir,
+//            @RequestParam(required = false) String availability,
+//            @RequestParam(required = false) Long factoryId,
+//            @RequestParam(required = false) List<String> categoryNames) {
+//
+//        ApiResponseDto<List<ToolResponseDto>> response =
+//                toolService.getAllTools(page, size, sortBy, sortDir, availability, factoryId, categoryNames);
+//        return ResponseEntity.ok(response);
+//    }
+
     @GetMapping("/getAll")
     public ResponseEntity<ApiResponseDto<List<ToolResponseDto>>> getAllTools(
             @RequestParam(defaultValue = "0") int page,
@@ -56,13 +72,21 @@ public class ToolController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String availability,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) Long factoryId,
-            @RequestParam(required = false) List<String> categoryNames) {
+            @RequestParam(required = false) List<String> categoryNames,
+            @RequestParam(required = false) List<String> factoryNames
+    ) {
 
-        ApiResponseDto<List<ToolResponseDto>> response =
-                toolService.getAllTools(page, size, sortBy, sortDir, availability, factoryId, categoryNames);
+        var response = toolService.getAllTools(
+                page, size, sortBy, sortDir,
+                availability,search, factoryId, categoryNames, factoryNames
+        );
+
         return ResponseEntity.ok(response);
     }
+
+
 
 
     @GetMapping("/{id}")

@@ -17,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -28,12 +29,14 @@ public class CentralOfficeService {
     private final UserCentralOfficeRepository mappingRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Transactional
     public ApiResponseDto<Void> addCentralOfficer(AddCentralOfficerDto dto) {
         CentralOffice office = centralOfficeRepository.findAll().stream()
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Central Office not found. Please seed one."));
+
         userRepository.findByEmailIgnoreCase(dto.getEmail())
                 .ifPresent(u -> {
                     throw new ResourceNotFoundException(
@@ -45,34 +48,57 @@ public class CentralOfficeService {
 
         Role centralRole = roleRepository.findByRoleName(RoleName.CENTRALOFFICER.name())
                 .orElseThrow(() -> new ResourceNotFoundException("CENTRAL_OFFICER role not found"));
+
+        String plainPassword = UUID.randomUUID().toString().substring(0, 10);
+        String encryptedPassword = passwordEncoder.encode(plainPassword);
+
         User officer = User.builder()
                 .username(dto.getName())
                 .email(dto.getEmail())
-                .password(passwordEncoder.encode("default123"))
+                .password(encryptedPassword)
                 .role(centralRole)
                 .isActive(ActiveStatus.ACTIVE)
                 .createdAt(LocalDateTime.now())
                 .build();
+
         userRepository.save(officer);
+
         mappingRepository.save(
                 UserCentralOfficeMapping.builder()
                         .centralOfficer(officer)
                         .centralOffice(office)
                         .build()
         );
+
+        emailService.sendCredentialsEmail(
+                officer.getEmail(),
+                officer.getUsername(),
+                plainPassword,
+                "Central Officer"
+        );
+
         return new ApiResponseDto<>(true, "Central Officer added successfully", null);
     }
 
 
+
     @Transactional
-    public ApiResponseDto<Void> updateCentralOfficer(Long id, AddCentralOfficerDto dto) {
+    public ApiResponseDto<Void> updateCentralOfficer(Long id, UpdateCentralOfficerDto dto) {
         User officer = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Central Officer not found with ID: " + id));
         if (officer.getIsActive() == ActiveStatus.INACTIVE) {
             return new ApiResponseDto<>(false, "Cannot update an inactive Central Officer", null);
         }
-        officer.setUsername(dto.getName());
-        officer.setEmail(dto.getEmail());
+        if (dto.getName() != null) {
+            String trimmedName = dto.getName().trim();
+            if (trimmedName.isEmpty()) {
+                return new ApiResponseDto<>(false, "Name cannot be blank if provided", null);
+            }
+            officer.setUsername(trimmedName);
+        }
+        if (dto.getEmail() != null) {
+            officer.setEmail(dto.getEmail());
+        }
         officer.setUpdatedAt(LocalDateTime.now());
         userRepository.save(officer);
         return new ApiResponseDto<>(true, "Central Officer updated successfully", null);

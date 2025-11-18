@@ -21,7 +21,4 @@ public interface ToolRepository extends JpaRepository<Tool, Long>, JpaSpecificat
 
     Optional<Tool> findByIdAndIsActive(Long id, ActiveStatus isActive);
 
-    Page<Tool> findByIsActive(ActiveStatus activeStatus, Pageable pageable);
-
-
 }

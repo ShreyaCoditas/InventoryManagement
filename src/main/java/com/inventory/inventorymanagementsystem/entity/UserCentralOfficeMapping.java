@@ -1,7 +1,5 @@
 package com.inventory.inventorymanagementsystem.entity;
 
-
-
 import jakarta.persistence.*;
 import lombok.*;
 

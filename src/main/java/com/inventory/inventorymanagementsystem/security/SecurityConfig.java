@@ -16,6 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.bind.annotation.GetMapping;
+
 import java.util.List;
 
 @Configuration
@@ -81,6 +83,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/owner/worker/update/{id}").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
+                                .requestMatchers("/api/owner/users/*/factory-id").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR","WORKER")
 
 
 
@@ -100,6 +103,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/tools/worker/return").hasRole("WORKER")
                                 .requestMatchers("/api/tools/cs/requests").hasRole("CHIEFSUPERVISOR")
                                 .requestMatchers("/api/tools/verify/return").hasRole("CHIEFSUPERVISOR")
+                                .requestMatchers("/api/tools/getAll").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
 
 
 

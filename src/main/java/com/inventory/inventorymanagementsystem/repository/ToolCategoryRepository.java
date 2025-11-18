@@ -9,7 +9,6 @@ import java.util.Optional;
 
 public interface ToolCategoryRepository extends JpaRepository<ToolCategory, Long> {
     Optional<ToolCategory> findByCategoryNameIgnoreCase(String name);
-    boolean existsByCategoryNameIgnoreCase(String name);
-//    List<ToolCategory> findByIsActive(ActiveStatus status);
+
 }
 

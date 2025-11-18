@@ -1,5 +1,6 @@
 package com.inventory.inventorymanagementsystem.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.RoleName;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.User;
@@ -18,16 +19,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.inventory.inventorymanagementsystem.entity.Role;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -59,20 +56,34 @@ public class UserService {
 
     private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
 
-    public User register(RegisterDto userDto){
-        String normalizedEmail=userDto.getEmail().toLowerCase();
-        if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
+    @Transactional
+    public User registerDistributor(DistributorRegisterDto dto) {
+        String emailLower = dto.getEmail().toLowerCase().trim();
+
+        // Check duplicates
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
-        if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
-            throw new RuntimeException("Email already exists");
+        if (userRepository.findByEmailIgnoreCase(emailLower).isPresent()) {
+            throw new RuntimeException("Email already registered");
         }
-        User user=objectMapper.convertValue(userDto,User.class);
-        user.setEmail(normalizedEmail);
-        user.setPassword(encoder.encode(userDto.getPassword()));
-        Role defaultRole = roleRepository.findByRoleName(RoleName.DISTRIBUTOR.name())
-                .orElseThrow(()->new RuntimeException("Role not found"));
-        user.setRole(defaultRole);
+        if (userRepository.findByTaxRegistrationNumber(dto.getTaxRegistrationNumber()).isPresent()) {
+            throw new RuntimeException("GSTIN already registered");
+        }
+
+        User user = User.builder()
+                .username(dto.getUsername())
+                .email(emailLower)
+                .password(encoder.encode(dto.getPassword()))
+                .companyName(dto.getCompanyName())
+                .city(dto.getCity())
+                .address(dto.getAddress())
+                .taxRegistrationNumber(dto.getTaxRegistrationNumber())
+                .isActive(ActiveStatus.ACTIVE)
+                .role(roleRepository.findByRoleName(RoleName.DISTRIBUTOR.name())
+                        .orElseThrow(() -> new RuntimeException("DISTRIBUTOR role not found")))
+                .build();
+
         return userRepository.save(user);
     }
 

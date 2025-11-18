@@ -11,8 +11,5 @@ import java.util.List;
 @Repository
 public interface BayRepository extends JpaRepository<Bay, Long> {
 
-    @Query("SELECT b FROM Bay b WHERE b.factory.id = :factoryId")
-    List<Bay> findAllByFactoryId(@Param("factoryId") Long factoryId);
-
     List<Bay> findByFactoryId(Long factoryId);
 }
