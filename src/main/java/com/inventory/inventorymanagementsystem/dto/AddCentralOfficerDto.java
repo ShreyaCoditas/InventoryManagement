@@ -15,7 +15,11 @@ public class AddCentralOfficerDto {
     private String name;
 
 
+
     @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @Pattern(
+            regexp = "^[A-Za-z][A-Za-z0-9._%+-]{0,63}@[A-Za-z][A-Za-z0-9.-]*\\.[A-Za-z]{2,}$",
+            message = "Invalid email address"
+    )
     private String email;
 }

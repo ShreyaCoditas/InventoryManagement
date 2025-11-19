@@ -79,71 +79,18 @@ public class MerchandiseService {
         return new ApiResponseDto<>(true, "Merchandise added successfully", null);
     }
 
-
-//    public ApiResponseDto<List<MerchandiseResponseDto>> getAllMerchandise(MerchandiseFilterSortDto filter) {
-//
-//        // Sorting
-//        Sort sort = filter.getSortDirection().equalsIgnoreCase("desc") ?
-//                Sort.by(filter.getSortBy()).descending() :
-//                Sort.by(filter.getSortBy()).ascending();
-//
-//        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-//
-//        // Build specification
-//        Specification<Merchandise> spec = Specification.allOf(
-//                MerchandiseSpecifications.hasActiveStatus(filter.getActiveStatus()),  // ⭐ DEFAULT → ACTIVE
-//                MerchandiseSpecifications.searchByName(filter.getSearch()),
-//                MerchandiseSpecifications.hasMinRewardPoints(filter.getMinRewardPoints()),
-//                MerchandiseSpecifications.hasMaxRewardPoints(filter.getMaxRewardPoints()),
-//                MerchandiseSpecifications.hasStockStatus(filter.getStockStatus())
-//        );
-//
-//        // Fetch paginated result
-//        Page<Merchandise> pageResult = merchandiseRepository.findAll(spec, pageable);
-//
-//        // Convert to DTO list
-//        List<MerchandiseResponseDto> dtos = pageResult.getContent()
-//                .stream()
-//                .map(m -> new MerchandiseResponseDto(
-//                        m.getId(),
-//                        m.getName(),
-//                        m.getRewardPoints(),
-//                        m.getQuantity(),
-//                        m.getImage(),
-//                        m.getQuantity() != null && m.getQuantity() > 0 ? "INSTOCK" : "OUTOFSTOCK",
-//                        m.getIsActive().name() // ACTIVE / INACTIVE
-//                ))
-//                .toList();
-//
-//        Map<String, Object> pagination = PaginationUtil.build(pageResult);
-//
-//        return new ApiResponseDto<>(
-//                true,
-//                "Filtered merchandise fetched successfully",
-//                dtos,
-//                pagination
-//        );
-//    }
 public ApiResponseDto<List<MerchandiseResponseDto>> getAllMerchandise(MerchandiseFilterSortDto filter) {
-
-    // ---------- SORTING ----------
     Sort sort = filter.getSortDirection().equalsIgnoreCase("desc") ?
             Sort.by(filter.getSortBy()).descending() :
             Sort.by(filter.getSortBy()).ascending();
-
     Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-
-    // ---------- BUILD SPECIFICATION ----------
     Specification<Merchandise> spec = Specification.allOf();
-
-    // DEFAULT → ACTIVE only
     String status = filter.getStatus();
     if (status == null || status.isBlank()) {
         spec = spec.and(MerchandiseSpecifications.hasStatus("ACTIVE"));
     } else {
         spec = spec.and(MerchandiseSpecifications.hasStatus(status));
     }
-
     if (filter.getSearch() != null && !filter.getSearch().isBlank()) {
         spec = spec.and(MerchandiseSpecifications.searchByName(filter.getSearch()));
     }
@@ -159,10 +106,7 @@ public ApiResponseDto<List<MerchandiseResponseDto>> getAllMerchandise(Merchandis
     if (filter.getStockStatus() != null && !filter.getStockStatus().isBlank()) {
         spec = spec.and(MerchandiseSpecifications.hasStockStatus(filter.getStockStatus()));
     }
-
-    // ---------- EXECUTE QUERY ----------
     Page<Merchandise> pageResult = merchandiseRepository.findAll(spec, pageable);
-
     List<MerchandiseResponseDto> dtos = pageResult.getContent()
             .stream()
             .map(m -> new MerchandiseResponseDto(
@@ -175,9 +119,7 @@ public ApiResponseDto<List<MerchandiseResponseDto>> getAllMerchandise(Merchandis
                     m.getIsActive().name()     // <-- STATUS INCLUDED
             ))
             .toList();
-
     Map<String, Object> pagination = PaginationUtil.build(pageResult);
-
     return new ApiResponseDto<>(true, "Filtered merchandise fetched successfully", dtos, pagination);
 }
 

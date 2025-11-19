@@ -28,6 +28,19 @@ public class WorkerSpecifications {
             );
         };
     }
+    public static Specification<User> search(String keyword) {
+        return (root, query, cb) -> {
+            if (keyword == null || keyword.isBlank()) return null;
+
+            String like = "%" + keyword.toLowerCase() + "%";
+
+            return cb.or(
+                    cb.like(cb.lower(root.get("username")), like),
+                    cb.like(cb.lower(root.get("email")), like)
+            );
+        };
+    }
+
 
 
     public static Specification<User> hasStatuses(List<String> statuses) {
@@ -56,21 +69,6 @@ public class WorkerSpecifications {
 
     }
 
-//    public static Specification<User> hasStatus(String status) {
-//        return (root, query, cb) -> {
-//            if (status == null || status.isBlank()) return null;
-//
-//            // Normalize the input to match DB values (ACTIVE / INACTIVE)
-//            String normalized;
-//            switch (status.toLowerCase()) {
-//                case "active", "yes" -> normalized = "ACTIVE";
-//                case "inactive", "no" -> normalized = "INACTIVE";
-//                default -> { return null; }
-//            }
-//
-//            return cb.equal(cb.upper(root.get("isActive")), normalized);
-//        };
-//    }
 
     public static Specification<User> belongsToFactory(Long factoryId) {
         return (root, query, cb) -> {
@@ -83,36 +81,6 @@ public class WorkerSpecifications {
         };
     }
 
-
-
-//
-//    public static Specification<User> hasLocation(String location) {
-//        return (root, query, cb) -> {
-//            if (location == null || location.isBlank()) return null;
-//
-//            // Split by comma and normalize (e.g., "Pune,Mumbai" → ["pune", "mumbai"])
-//            String[] locations = location.split(",");
-//            List<String> normalized = Arrays.stream(locations)
-//                    .map(String::trim)
-//                    .filter(s -> !s.isEmpty())
-//                    .map(String::toLowerCase)
-//                    .toList();
-//
-//            if (normalized.isEmpty()) return null;
-//
-//            query.distinct(true);
-//            Join<User, UserFactoryMapping> mapping = root.join("userFactoryMappings", JoinType.LEFT);
-//            Join<UserFactoryMapping, Factory> factory = mapping.join("factory", JoinType.LEFT);
-//
-//            // Combine all locations with OR conditions
-//            return cb.or(
-//                    normalized.stream()
-//                            .map(city -> cb.like(cb.lower(factory.get("city")), "%" + city + "%"))
-//                            .toArray(Predicate[]::new)
-//
-//            );
-//        };
-//    }
 public static Specification<User> hasLocations(List<String> locations) {
     return (root, query, cb) -> {
         if (locations == null || locations.isEmpty()) return null;

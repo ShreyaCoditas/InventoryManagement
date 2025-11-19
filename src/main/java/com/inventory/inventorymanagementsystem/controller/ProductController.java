@@ -41,19 +41,41 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
+//    @GetMapping("/getAllProducts")
+//    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "id") String sortBy,
+//            @RequestParam(defaultValue = "asc") String sortDir,
+//            @RequestParam(required = false) List<String> categoryNames,
+//            @RequestParam(required = false) String availability) {
+//
+//        ApiResponseDto<List<ProductResponseDto>> response =
+//                productService.getAllProducts(page, size, sortBy, sortDir, categoryNames, availability);
+//
+//        return ResponseEntity.ok(response);
+//    }
+
     @GetMapping("/getAllProducts")
-    public ResponseEntity<ApiResponseDto<List<ProductResponseDto>>> getAllProducts(
+    public ApiResponseDto<?> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) List<String> categoryNames,
-            @RequestParam(required = false) String availability) {
-
-        ApiResponseDto<List<ProductResponseDto>> response =
-                productService.getAllProducts(page, size, sortBy, sortDir, categoryNames, availability);
-
-        return ResponseEntity.ok(response);
+            @RequestParam(required = false) String availability,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<String> status
+    ) {
+        return productService.getAllProducts(
+                page,
+                size,
+                sortBy,
+                sortDir,
+                categoryNames,
+                availability,
+                search,status
+        );
     }
 
 
@@ -72,7 +94,7 @@ public class ProductController {
     @PutMapping("/categories/{id}/update")
     public ResponseEntity<ApiResponseDto<CategoryResponseDto>> updateCategory(
             @PathVariable Long id,
-            @RequestBody CreateOrUpdateCategoryDto request) {
+            @Valid @RequestBody CreateOrUpdateCategoryDto request) {
 
         ApiResponseDto<CategoryResponseDto> response = productService.updateCategory(id, request);
         return ResponseEntity.ok(response);

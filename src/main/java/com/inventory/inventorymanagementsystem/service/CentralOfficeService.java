@@ -52,6 +52,7 @@ public class CentralOfficeService {
         String plainPassword = UUID.randomUUID().toString().substring(0, 10);
         String encryptedPassword = passwordEncoder.encode(plainPassword);
 
+
         User officer = User.builder()
                 .username(dto.getName())
                 .email(dto.getEmail())

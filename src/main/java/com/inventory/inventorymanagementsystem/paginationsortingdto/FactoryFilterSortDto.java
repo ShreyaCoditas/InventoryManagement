@@ -13,4 +13,6 @@ public class FactoryFilterSortDto extends BaseFilterSortDto {
     private String plantHeadName;
     private String status; // ACTIVE / INACTIVE
 // filter by plant head assigned
+private String search;
+
 }

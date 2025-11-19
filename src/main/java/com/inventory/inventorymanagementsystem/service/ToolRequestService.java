@@ -154,29 +154,28 @@ public class ToolRequestService {
     ) {
         User cs = currentUser.getUser();
 
-        // Find factory of Chief Supervisor
+
         UserFactoryMapping mapping = userFactoryMappingRepository.findByUser(cs)
                 .orElseThrow(() -> new RuntimeException("Supervisor not mapped to any factory"));
         Long factoryId = mapping.getFactory().getId();
 
-        // PAGINATION & SORTING
+
         Sort sort = "desc".equalsIgnoreCase(filter.getSortDirection())
                 ? Sort.by(filter.getSortBy()).descending()
                 : Sort.by(filter.getSortBy()).ascending();
 
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
 
-        // BUILD SPECIFICATION — MODERN WAY (No deprecation)
         Specification<ToolRequestItem> spec = Specification.allOf(
                 ToolRequestItemSpecifications.belongsToFactory(factoryId),
                 ToolRequestItemSpecifications.hasStatus(filter.getStatus()),
                 ToolRequestItemSpecifications.hasExpensiveTag(filter.getExpensive())
         );
 
-        // EXECUTE QUERY
+
         Page<ToolRequestItem> page = itemRepository.findAll(spec, pageable);
 
-        // MAP TO DTO
+
         List<CSRequestItemResponseDto> dtos = page.getContent().stream()
                 .map(item -> {
                     Tool tool = item.getTool();
@@ -210,11 +209,6 @@ public class ToolRequestService {
             UserPrincipal currentUser
     ) {
         User ph = currentUser.getUser();
-
-//        // verify plant head
-//        if (!ph.getRole().getRoleName().equals(RoleName.PLANTHEAD)) {
-//            throw new RuntimeException("Only Plant Head can access this");
-//        }
 
         // find factory where PH is assigned
         UserFactoryMapping mapping = userFactoryMappingRepository.findByUser(ph)
@@ -332,12 +326,7 @@ public class ToolRequestService {
 
         Map<String, Object> pagination = PaginationUtil.build(page);
 
-        return new ApiResponseDto<>(
-                true,
-                "Worker requests fetched successfully",
-                dtos,
-                pagination
-        );
+        return new ApiResponseDto<>(true, "Worker requests fetched successfully", dtos, pagination);
     }
 
     @Transactional
@@ -345,17 +334,16 @@ public class ToolRequestService {
 
         User cs = currentUser.getUser();
 
-        // 1️⃣ Verify CS → Factory mapping
         UserFactoryMapping mapping = userFactoryMappingRepository.findByUser(cs)
                 .orElseThrow(() -> new RuntimeException("Supervisor not mapped to any factory"));
 
         Factory factory = mapping.getFactory();
 
-        // 2️⃣ Validate Tool
+
         Tool tool = toolRepository.findById(dto.getToolId())
                 .orElseThrow(() -> new RuntimeException("Tool not found"));
 
-        // 3️⃣ Check if tool belongs to THIS factory
+
         Optional<ToolStock> stockOpt =
                 toolStockRepository.findByToolIdAndFactoryId(tool.getId(), factory.getId());
 
@@ -367,7 +355,7 @@ public class ToolRequestService {
             );
         }
 
-        // 4️⃣ Create Restock Request
+
         ToolRestockRequest request = ToolRestockRequest.builder()
                 .tool(tool)
                 .factory(factory)

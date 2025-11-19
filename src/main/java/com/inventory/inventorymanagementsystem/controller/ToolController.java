@@ -129,7 +129,7 @@ public class ToolController {
 
     @PostMapping("/stock/add")
     public ResponseEntity<ApiResponseDto<String>> addToolStock(
-            @RequestBody AddToolStockDto dto,
+            @Valid @RequestBody AddToolStockDto dto,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         ApiResponseDto<String> response = toolService.addToolStock(dto, currentUser);
         return ResponseEntity.ok(response);
@@ -138,13 +138,13 @@ public class ToolController {
     //  Worker → submit return request
     @PostMapping("/worker/return")
     public ResponseEntity<ApiResponseDto<String>> requestReturn(
-            @RequestBody WorkerReturnRequestDto dto,
+            @Valid @RequestBody WorkerReturnRequestDto dto,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
         return ResponseEntity.ok(toolService.requestReturn(dto, currentUser));
     }
 
-    // GET with query params mapped to ReturnFilterSortDto (use @ModelAttribute in controller if needed)
+    // GET with query params mapped to ReturnFilterSortDto
     @GetMapping("cs/requests")
     public ResponseEntity<ApiResponseDto<List<CSReturnListResponseDto>>> getReturns(
             @ModelAttribute ReturnFilterSortDto filter,
@@ -155,7 +155,7 @@ public class ToolController {
 
     @PostMapping("/verify/return")
     public ResponseEntity<ApiResponseDto<String>> verifyReturn(
-            @RequestBody CSReturnVerificationDto dto,
+           @Valid @RequestBody CSReturnVerificationDto dto,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
         return ResponseEntity.ok(toolService.verifyReturn(dto, currentUser));

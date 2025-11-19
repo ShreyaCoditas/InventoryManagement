@@ -9,18 +9,22 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateChiefSupervisorRequestDto {
-    @NotBlank(message = "Name is required")
-    @Pattern(regexp = "^[a-zA-Z][a-zA-Z0-9._-]{1,28}[a-zA-Z0-9]$", message = "Username must be 3-30 characters, start with a letter, and contain only letters, numbers, underscores, or hyphens")
-    @Size(min = 3, max = 30)
+    @NotBlank(message = "Central Officer name is required")
+    @Pattern(
+            regexp = "^[A-Za-z][A-Za-z0-9.\\- ]{1,28}[A-Za-z]$",
+            message = "Username must be 3–30 characters, start and end with a letter, and contain only letters, numbers, hyphens, dots, or spaces (no underscores or trailing digits)"
+    )
     private String name;
 
     @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @Pattern(
+            regexp = "^[A-Za-z][A-Za-z0-9._%+-]{0,63}@[A-Za-z][A-Za-z0-9.-]*\\.[A-Za-z]{2,}$",
+            message = "Invalid email address"
+    )
     private String email;
 
-    @NotNull(message = "Factory ID is required")
-    @Positive(message = "Factory ID must be a positive number")
 
+    @Positive(message = "Factory ID must be a positive number")
     private Long factoryId;   // Required - owner or planthead selects factory
 
 }

@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 
@@ -35,6 +36,9 @@ public class ChiefSupervisorService {
 
     @Autowired
     private  PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     @Transactional
     public ApiResponseDto<ChiefSupervisorResponseDto> createChiefSupervisor(CreateChiefSupervisorRequestDto dto, User currentUser) {
@@ -99,16 +103,32 @@ public class ChiefSupervisorService {
     private User createNewChiefSupervisor(CreateChiefSupervisorRequestDto dto) {
         Role role = roleRepository.findByRoleName(RoleName.CHIEFSUPERVISOR.name())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: CHIEF_SUPERVISOR"));
-
+        String rawPassword = generateRandomPassword();
         User user = new User();
         user.setUsername(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode("default123"));
+        user.setPassword(passwordEncoder.encode(rawPassword));
         user.setRole(role);
         user.setIsActive(ActiveStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        emailService.sendCredentialsEmail(
+                dto.getEmail(),
+                dto.getName(),
+                rawPassword,
+                "CHIEFSUPERVISOR"
+        );
+
+        return savedUser;
     }
+    private String generateRandomPassword() {
+        // 12-char strong random password (mixed case + digits)
+        return UUID.randomUUID().toString()
+                .replace("-", "")
+                .substring(0, 12);
+    }
+
+
 
 }

@@ -52,7 +52,7 @@ public class UserController {
 
     @PostMapping("/create-factory")
     public ResponseEntity<ApiResponseDto<FactoryResponseDto>> createFactory(
-            @RequestBody CreateFactoryRequestDto request,
+            @Valid @RequestBody CreateFactoryRequestDto request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         User owner = userPrincipal.getUser();

@@ -2,7 +2,9 @@ package com.inventory.inventorymanagementsystem.constants;
 
 public enum OrderStatus {
     PENDING,
-    APPROVED,
+    PARTIALLY_FULFILLED,
+    FULFILLED,
     REJECTED,
-    DELIVERED
+    APPROVED
 }
+

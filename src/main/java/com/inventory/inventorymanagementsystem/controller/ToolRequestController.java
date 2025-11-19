@@ -27,7 +27,7 @@ public class ToolRequestController {
 
     @PostMapping("/worker")
     public ResponseEntity<ApiResponseDto<String>> requestTools(
-            @RequestBody WorkerToolRequestDto dto,
+            @Valid @RequestBody WorkerToolRequestDto dto,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         ApiResponseDto<String> response = toolRequestService.createToolRequest(dto, currentUser);
         return ResponseEntity.ok(response);
@@ -72,7 +72,7 @@ public class ToolRequestController {
     @PostMapping("/restock")
 //    @PreAuthorize("hasRole('CHIEFSUPERVISOR')")
     public ResponseEntity<ApiResponseDto<String>> createRestockRequest(
-            @RequestBody CreateRestockRequestDto dto,
+            @Valid @RequestBody CreateRestockRequestDto dto,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
         return ResponseEntity.ok(toolRequestService.createRestockRequest(dto, currentUser));

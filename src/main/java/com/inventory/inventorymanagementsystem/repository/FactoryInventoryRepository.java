@@ -17,5 +17,16 @@ public interface FactoryInventoryRepository extends JpaRepository<FactoryInvento
 
     Optional<FactoryInventoryStock> findByFactoryIdAndProductId(Long factoryId, Long productId);
 
+    @Query("SELECT f.product.id, SUM(f.quantity) " +
+            "FROM FactoryInventoryStock f " +
+            "WHERE f.product.id IN :ids " +
+            "GROUP BY f.product.id")
+    List<Object[]> findQuantitiesForProducts(@Param("ids") List<Long> ids);
+
+    @Query("SELECT COALESCE(SUM(f.quantity), 0) FROM FactoryInventoryStock f WHERE f.factory.id = :factoryId")
+    int getTotalProductsByFactoryId(@Param("factoryId") Long factoryId);
+
+
+
 }
 

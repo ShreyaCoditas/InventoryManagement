@@ -76,11 +76,11 @@ public class SecurityConfig {
                                 .requestMatchers("/api/owner/planthead/factories").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/factories/{factoryId}/supervisors").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/users").hasAnyRole("OWNER","PLANTHEAD")
-                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasRole("PLANTHEAD")
+                                .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
 
-                                .requestMatchers("/api/owner/create/worker").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/create/worker").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/getall").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
-                                .requestMatchers("/api/owner/worker/update/{id}").hasAnyRole("PLANTHEAD","CHIEFSUPERVISOR")
+                                .requestMatchers("/api/owner/worker/update/{id}").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR")
                                 .requestMatchers("/api/owner/worker/delete/{id}").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/{factoryId}/available-bays").hasAnyRole("OWNER","PLANTHEAD")
                                 .requestMatchers("/api/owner/users/*/factory-id").hasAnyRole("OWNER","PLANTHEAD","CHIEFSUPERVISOR","WORKER")
@@ -125,7 +125,14 @@ public class SecurityConfig {
 
                                 .requestMatchers("/api/product/central-office").hasRole("CENTRALOFFICER")
 
+                                .requestMatchers("/api/order/all").hasRole("CENTRALOFFICER")
+                                .requestMatchers("/api/order/distributor/orders").hasRole("DISTRIBUTOR")
+                                .requestMatchers("/api/order/{orderId}/update-status").hasRole("CENTRALOFFICER")
+                                .requestMatchers("/api/order/{orderId}/dispatch").hasRole("CENTRALOFFICER")
+                                .requestMatchers("/api/order/distributor/orders/{orderId}").hasRole("DISTRIBUTOR")
+
                                 .requestMatchers("/api/products/**").hasRole("OWNER")
+
 
 
 

@@ -23,6 +23,10 @@ public interface ToolStockRepository extends JpaRepository<ToolStock, Long> {
     Optional<ToolStock> findByFactoryAndTool(Factory factory, Tool tool);
     Optional<ToolStock> findByToolIdAndFactoryId(Long toolId, Long factoryId);
 
+    @Query("SELECT COALESCE(SUM(t.totalQuantity), 0) FROM ToolStock t WHERE t.factory.id = :factoryId")
+    int getTotalToolsByFactoryId(@Param("factoryId") Long factoryId);
+
+
 
 
 

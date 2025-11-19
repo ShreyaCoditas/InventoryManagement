@@ -2,6 +2,7 @@ package com.inventory.inventorymanagementsystem.entity;
 
 
 import com.inventory.inventorymanagementsystem.constants.OrderStatus;
+import com.inventory.inventorymanagementsystem.constants.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +22,7 @@ public class DistributorOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "order_code", unique = true, length = 20)
     private String orderCode;
@@ -38,14 +39,19 @@ public class DistributorOrder {
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "order_status")
+    @Column(name = "status", nullable = false)
     private OrderStatus status;
 
-    @Column(name = "reject_reason", columnDefinition = "TEXT")
+    @Column(name = "reject_reason",nullable = false)
     private String rejectReason;
 
     @Column(name = "invoice_id")
-    private Integer invoiceId;
+    private Long invoiceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus;
+
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -57,12 +63,24 @@ public class DistributorOrder {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Invoice> invoices;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+//    @PrePersist
+//    protected void onCreate() {
+//        createdAt = LocalDateTime.now();
+//        updatedAt = LocalDateTime.now();
+//
+//    }
+@PrePersist
+protected void onCreate() {
+    createdAt = LocalDateTime.now();
+    updatedAt = LocalDateTime.now();
 
-    }
+    if (paymentStatus == null)
+        paymentStatus = PaymentStatus.UNPAID;
+
+    if (status == null)
+        status = OrderStatus.PENDING;
+}
+
 
     @PreUpdate
     protected void onUpdate() {

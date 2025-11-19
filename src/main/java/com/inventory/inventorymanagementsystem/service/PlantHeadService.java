@@ -4,6 +4,7 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.RoleName;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.*;
+import com.inventory.inventorymanagementsystem.exceptions.CustomException;
 import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.paginationsortingdto.WorkerFilterSortDto;
 import com.inventory.inventorymanagementsystem.repository.*;
@@ -20,19 +21,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.inventory.inventorymanagementsystem.specifications.WorkerSpecifications.*;
-//import static com.inventory.inventorymanagementsystem.specifications.WorkerSpecifications.UserSpecification.*;
 
 @Slf4j
 @Service
@@ -67,7 +63,9 @@ public class PlantHeadService {
 
     @Transactional
     public PlantHeadResponseDto createPlantHead(CreatePlantHeadRequestDto request, User owner) {
-        String generatedPassword = "default123";
+//        String generatedPassword = "default123";
+        String rawPassword = UUID.randomUUID().toString().substring(0, 10);  // 10-char random password
+
         Role plantHeadRole = roleRepository.findByRoleName(RoleName.PLANTHEAD.name())
                 .orElseThrow(() -> new IllegalStateException("PLANTHEAD role not seeded"));
 
@@ -77,7 +75,7 @@ public class PlantHeadService {
                     User newUser = new User();
                     newUser.setUsername(request.getUsername());
                     newUser.setEmail(request.getEmail());
-                    newUser.setPassword(passwordEncoder.encode(generatedPassword));
+                    newUser.setPassword(passwordEncoder.encode(rawPassword));
                     newUser.setRole(plantHeadRole);
                     newUser.setIsActive(ActiveStatus.ACTIVE);
                     newUser.setCreatedAt(LocalDateTime.now());
@@ -85,7 +83,6 @@ public class PlantHeadService {
                     return userRepository.save(newUser);
                 });
 
-        // Validate role of the found/created user
         if (plantHead.getRole() == null ||
                 !RoleName.PLANTHEAD.equals(plantHead.getRole().getRoleName())) {
             throw new IllegalArgumentException("User exists but is not a Plant Head");
@@ -96,18 +93,15 @@ public class PlantHeadService {
             Factory factory = factoryRepository.findById(request.getFactoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Factory not found"));
 
-            // NEW: Prevent assignment to inactive factory
             if (factory.getIsActive() != ActiveStatus.ACTIVE) {
                 throw new IllegalStateException("Cannot assign Plant Head to an inactive factory");
             }
 
-            // Assign Plant Head to Factory if not already assigned
             if (!Objects.equals(factory.getPlantHead(), plantHead)) {
                 factory.setPlantHead(plantHead);
                 factoryRepository.save(factory);
             }
 
-            // Create a mapping entry if not present
             boolean alreadyMapped = userFactoryMappingRepository
                     .existsByUserIdAndFactoryIdAndAssignedRole(
                             plantHead.getId(), factory.getId(), RoleName.PLANTHEAD);
@@ -127,7 +121,7 @@ public class PlantHeadService {
                 emailService.sendCredentialsEmail(
                         plantHead.getEmail(),
                         plantHead.getUsername(),
-                        generatedPassword,
+                        rawPassword,
                         "PLANT HEAD"
                 );
             } catch (Exception e) {
@@ -195,7 +189,7 @@ public class PlantHeadService {
 
 
     private static final String WORKER_ROLE = "WORKER";
-    private static final String DEFAULT_PASSWORD = "default123";
+    private static final String DEFAULT_PASSWORD = UUID.randomUUID().toString().substring(0, 10);;
 
     // CREATE
     public void createWorker(CreateWorkerRequestDto dto, UserPrincipal currentUser) {
@@ -242,7 +236,7 @@ public class PlantHeadService {
     @Transactional
     public void updateWorker(Long workerId, UpdateWorkerDto dto) {
         User worker = userRepository.findById(workerId)
-                .orElseThrow(() -> new RuntimeException("Worker not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
         if (dto.getName() != null && !dto.getName().isBlank()) {
             worker.setUsername(dto.getName().trim());
         }
@@ -257,11 +251,11 @@ public class PlantHeadService {
         }
         if (dto.getFactoryId() != null || dto.getBayId() != null) {
             UserFactoryMapping existingMapping = userFactoryMappingRepository.findByUserId(workerId)
-                    .orElseThrow(() -> new RuntimeException("Worker-factory mapping not found"));
+                    .orElseThrow(() -> new CustomException("Worker-factory mapping not found", HttpStatus.NOT_FOUND));
             // Determine new factory (if provided)
             Factory factory = dto.getFactoryId() != null
                     ? factoryRepository.findById(dto.getFactoryId())
-                    .orElseThrow(() -> new RuntimeException("Factory not found"))
+                    .orElseThrow(() -> new ResourceNotFoundException("Factory not found"))
                     : existingMapping.getFactory();
 
             // Determine new bay (if provided)
@@ -297,14 +291,9 @@ public class PlantHeadService {
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
-//        Specification<User> spec = Specification.allOf(
-//                WorkerSpecifications.isWorker(),
-//                WorkerSpecifications.hasStatus(filter.getStatus()),
-//                WorkerSpecifications.hasLocation(filter.getLocation()),
-//                WorkerSpecifications.belongsToFactory(factoryId)   // ⭐ NEW FILTER
-//        );
         Specification<User> spec = Specification.allOf(
                 WorkerSpecifications.isWorker(),
+                WorkerSpecifications.search(filter.getSearch()),
                 WorkerSpecifications.hasStatuses(filter.getStatus()),
                 WorkerSpecifications.hasLocations(filter.getLocations()),
                 WorkerSpecifications.belongsToFactory(factoryId)

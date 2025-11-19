@@ -21,12 +21,12 @@ public class UserSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // ✅ Filter by name (case-insensitive)
+
             if (name != null && !name.isBlank()) {
                 predicates.add(cb.like(cb.lower(root.get("username")), "%" + name.toLowerCase() + "%"));
             }
 
-            // ✅ Handle multiple or single status filters
+
             if (statuses != null && !statuses.isEmpty()) {
                 var inClause = cb.in(root.get("isActive"));
                 statuses.forEach(inClause::value);
@@ -35,7 +35,7 @@ public class UserSpecifications {
                 predicates.add(cb.equal(root.get("isActive"), status));
             }
 
-            // ✅ Filter by created date range
+
             if (createdAfter != null) {
                 predicates.add(cb.greaterThanOrEqualTo(
                         root.get("createdAt").as(java.time.LocalDateTime.class),

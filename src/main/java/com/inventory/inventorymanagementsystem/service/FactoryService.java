@@ -5,6 +5,7 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.constants.RoleName;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Factory;
+import com.inventory.inventorymanagementsystem.entity.ToolStock;
 import com.inventory.inventorymanagementsystem.entity.User;
 import com.inventory.inventorymanagementsystem.entity.UserFactoryMapping;
 import com.inventory.inventorymanagementsystem.exceptions.CustomException;
@@ -48,6 +49,12 @@ public class FactoryService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private FactoryInventoryRepository factoryInventoryRepository;
+
+    @Autowired
+    private ToolStockRepository toolStockRepository;
 
 
     @Transactional
@@ -120,7 +127,7 @@ public class FactoryService {
 
     @Transactional
     public ApiResponseDto<List<FactoryDto>> getAllFactories(FactoryFilterSortDto filter) {
-        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus());
+        Specification<Factory> spec = FactorySpecifications.withFilters(filter.getLocation(), filter.getPlantHeadName(), filter.getStatus(),filter.getSearch());
         Sort sort = Sort.by(filter.getSortBy());
         if ("desc".equalsIgnoreCase(filter.getSortDirection())) {
             sort = sort.descending();
@@ -139,9 +146,10 @@ public class FactoryService {
 
             List<String> chiefs = userFactoryMappingRepository.findChiefSupervisorsByFactoryId(factory.getId());
             String chiefSupervisorName = chiefs.isEmpty() ? "Unassigned" : String.join(", ", chiefs);
-            int totalProducts = factoryProductionRepository.findTotalProducedQuantityByFactoryId(factory.getId());
+            int totalProducts = factoryInventoryRepository.getTotalProductsByFactoryId(factory.getId());
             int totalWorkers = userFactoryMappingRepository.countByFactoryIdAndAssignedRole(factory.getId(), RoleName.WORKER);
-            int totalTools = toolStorageMappingRepository.countByFactoryId(factory.getId());
+            int totalTools = toolStockRepository.getTotalToolsByFactoryId(factory.getId());
+
             return new FactoryDto(
                     factory.getId(),
                     factory.getName(),

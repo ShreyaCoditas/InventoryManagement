@@ -15,7 +15,7 @@ public class ApiResponseDto<T> {
     private boolean success;
     private String message;
     private T data;
-    private Map<String, Object> pagination; // ✅ optional
+    private Map<String, Object> pagination;
 
     public ApiResponseDto(boolean success, String message) {
         this.success = success;
@@ -28,7 +28,6 @@ public class ApiResponseDto<T> {
         this.data = data;
     }
 
-    // ✅ new optional constructor for pagination
     public ApiResponseDto(boolean success, String message, T data, Map<String, Object> pagination) {
         this.success = success;
         this.message = message;

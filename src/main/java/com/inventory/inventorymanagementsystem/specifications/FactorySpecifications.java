@@ -14,7 +14,8 @@ public class FactorySpecifications {
     public static Specification<Factory> withFilters(
             List<String> locations,
             String plantHeadName,
-            String status
+            String status,
+            String search
     ) {
         return (root, query, cb) -> {
 
@@ -43,6 +44,23 @@ public class FactorySpecifications {
                         )
                 );
             }
+
+            /* 🔥 SEARCH (factory name / city / plant head name) */
+            if (search != null && !search.isBlank()) {
+                String keyword = "%" + search.trim().toLowerCase() + "%";
+
+                // Join with plantHead only when needed
+                var headJoin = root.join("plantHead", JoinType.LEFT);
+
+                predicates.add(
+                        cb.or(
+                                cb.like(cb.lower(root.get("name")), keyword),
+                                cb.like(cb.lower(root.get("city")), keyword),
+                                cb.like(cb.lower(headJoin.get("username")), keyword)
+                        )
+                );
+            }
+
 
             /* 🔥 FILTER BY STATUS (ACTIVE / INACTIVE) */
             if (status != null && !status.isBlank()) {

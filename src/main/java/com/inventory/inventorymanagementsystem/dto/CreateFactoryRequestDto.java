@@ -13,8 +13,8 @@ public class CreateFactoryRequestDto {
     @NotBlank(message = "Factory name is required")
     @Size(min = 3, max = 100, message = "Factory name must be between 3 and 100 characters")
     @Pattern(
-            regexp = "^[A-Za-z0-9\\s\\-&().,]+$",
-            message = "Factory name can only contain letters, numbers, spaces, and basic symbols (-, &, (, ), . ,)"
+            regexp = "^[A-Za-z][A-Za-z0-9\\s\\-&().,]*$",
+            message = "Factory name must start with a letter and can contain letters, numbers, spaces, and symbols (-, &, (, ), ., ,)"
     )
     private String name;
 
@@ -31,5 +31,6 @@ public class CreateFactoryRequestDto {
     private String address;
 
     // Optional — because a factory can exist before assigning a plant head
+    @Positive(message = "Plant Head ID must be a positive number")
     private Long plantHeadId;
 }

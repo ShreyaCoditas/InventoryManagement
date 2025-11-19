@@ -20,6 +20,7 @@ public class AddMerchandiseDto {
     @Min(value = 1, message = "Available quantity must be at least 1")
     private Long availableQuantity;
 
+    @NotNull(message = "image must not be null")
     @ValidImage(message = "Please upload a valid image file (e.g., JPG, PNG)")
     private MultipartFile image;
 

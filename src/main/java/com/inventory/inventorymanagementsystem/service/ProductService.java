@@ -4,6 +4,7 @@ import com.inventory.inventorymanagementsystem.constants.ActiveStatus;
 import com.inventory.inventorymanagementsystem.dto.*;
 import com.inventory.inventorymanagementsystem.entity.Product;
 import com.inventory.inventorymanagementsystem.entity.ProductCategory;
+import com.inventory.inventorymanagementsystem.exceptions.CustomException;
 import com.inventory.inventorymanagementsystem.exceptions.ResourceNotFoundException;
 import com.inventory.inventorymanagementsystem.repository.FactoryInventoryRepository;
 import com.inventory.inventorymanagementsystem.repository.ProductCategoryRepository;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -108,41 +110,53 @@ public class ProductService {
     }
 
     @Transactional
-    public ApiResponseDto<List<ProductResponseDto>> getAllProducts(int page, int size, String sortBy, String sortDir, List<String> categoryNames, String availability) {
+    public ApiResponseDto<List<ProductResponseDto>> getAllProducts(int page, int size, String sortBy,
+            String sortDir,
+            List<String> categoryNames,
+            String availability,
+            String search,
+            List<String> status
+    ) {
+
         if (sortBy == null || sortBy.isBlank()) {
             sortBy = "id";
         }
-        Sort sort = Sort.unsorted();
-        if (!"quantity".equalsIgnoreCase(sortBy)) {
-            sort = "desc".equalsIgnoreCase(sortDir)
+
+        Pageable pageable;
+
+        if (sortBy.equalsIgnoreCase("quantity")) {
+            pageable = PageRequest.of(page, size);
+        } else {
+            Sort sort = sortDir.equalsIgnoreCase("desc")
                     ? Sort.by(sortBy).descending()
                     : Sort.by(sortBy).ascending();
+
+            pageable = PageRequest.of(page, size, sort);
         }
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Product> productPage = productRepository.findByIsActive(ActiveStatus.ACTIVE, pageable);
-        List<Product> products = new ArrayList<>(productPage.getContent());
-        Map<Long, Integer> productQuantities = factoryInventoryRepository.findProductQuantities()
+
+        Specification<Product> spec = Specification
+                .allOf(ProductSpecifications.hasStatuses(status))
+                .and(ProductSpecifications.search(search))
+                .and(ProductSpecifications.inCategories(categoryNames))
+                .and(ProductSpecifications.availability(availability));
+
+        if (sortBy.equalsIgnoreCase("quantity")) {
+            spec = spec.and(ProductSpecifications.sortByQuantity(sortDir));
+        }
+
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+
+        List<Long> ids = productPage.stream().map(Product::getId).toList();
+        Map<Long, Integer> quantities = factoryInventoryRepository.findQuantitiesForProducts(ids)
                 .stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
                         row -> ((Number) row[1]).intValue()
                 ));
-        if (categoryNames != null && !categoryNames.isEmpty()) {
-            List<String> normalized = categoryNames.stream()
-                    .flatMap(names -> Arrays.stream(names.split(","))) // e.g. Furniture,Electronics
-                    .map(String::trim)
-                    .map(String::toLowerCase)
-                    .toList();
-            products = products.stream()
-                    .filter(p -> p.getCategory() != null &&
-                            normalized.contains(p.getCategory().getCategoryName().toLowerCase()))
-                    .toList();
-        }
 
-        List<ProductResponseDto> dtos = products.stream()
+        List<ProductResponseDto> dtos = productPage.getContent().stream()
                 .map(p -> {
-                    int quantity = productQuantities.getOrDefault(p.getId(), 0);
-                    String stockStatus = quantity == 0 ? "OUTOFSTOCK" : "INSTOCK";
+                    int qty = quantities.getOrDefault(p.getId(), 0);
 
                     return ProductResponseDto.builder()
                             .id(p.getId())
@@ -150,44 +164,18 @@ public class ProductService {
                             .categoryName(p.getCategory() != null ? p.getCategory().getCategoryName() : null)
                             .price(p.getPrice())
                             .rewardPoint(p.getRewardPoint())
-                            .quantity(quantity)
+                            .quantity(qty)
                             .productDescription(p.getProductDescription())
                             .image(p.getImage())
                             .isActive(p.getIsActive().name())
-                            .StockStatus(stockStatus)
+                            .StockStatus(qty > 0 ? "INSTOCK" : "OUTOFSTOCK")
                             .build();
                 })
                 .toList();
 
-        if (availability != null) {
-            if ("InStock".equalsIgnoreCase(availability)) {
-                dtos = dtos.stream()
-                        .filter(p -> p.getQuantity() > 0)
-                        .toList();
-            } else if ("OutOfStock".equalsIgnoreCase(availability)) {
-                dtos = dtos.stream()
-                        .filter(p -> p.getQuantity() == 0)
-                        .toList();
-            }
-        }
-
-        if ("price".equalsIgnoreCase(sortBy)) {
-            dtos = dtos.stream()
-                    .sorted("desc".equalsIgnoreCase(sortDir)
-                            ? Comparator.comparing(ProductResponseDto::getPrice).reversed()
-                            : Comparator.comparing(ProductResponseDto::getPrice))
-                    .toList();
-        } else if ("quantity".equalsIgnoreCase(sortBy)) {
-            dtos = dtos.stream()
-                    .sorted("desc".equalsIgnoreCase(sortDir)
-                            ? Comparator.comparing(ProductResponseDto::getQuantity).reversed()
-                            : Comparator.comparing(ProductResponseDto::getQuantity))
-                    .toList();
-        }
-
-        Map<String, Object> pagination = PaginationUtil.build(productPage);
-        return new ApiResponseDto<>(true, "Products fetched successfully", dtos, pagination);
+        return new ApiResponseDto<>(true, "Products fetched successfully", dtos, PaginationUtil.build(productPage));
     }
+
 
 
 
@@ -242,10 +230,10 @@ public class ProductService {
         boolean hasId = categoryId != null && categoryId > 0;
         boolean hasName = newCategoryName != null && !newCategoryName.isBlank();
         if (!hasId && !hasName) {
-            throw new RuntimeException("Either categoryId or newCategoryName is required");
+            throw new CustomException("Either categoryId or newCategoryName is required", HttpStatus.BAD_REQUEST);
         }
         if (hasId && hasName) {
-            throw new RuntimeException("Only one of categoryId or newCategoryName should be provided");
+            throw new CustomException("Only one of categoryId or newCategoryName should be provided",HttpStatus.BAD_REQUEST);
         }
     }
 

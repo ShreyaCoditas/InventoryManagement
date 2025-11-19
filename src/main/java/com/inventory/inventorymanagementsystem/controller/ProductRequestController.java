@@ -52,7 +52,7 @@ public class ProductRequestController {
         return productRequestService.addProductStockToFactory(dto, currentUser);
     }
 
-    // Central Officer: get restock requests created by me
+    // Central Officer: get restock requests created by Central Officer
 //    @PreAuthorize("hasRole('CENTRAL_OFFICER')")
 
     @GetMapping("/central-office/my-restock-requests")
